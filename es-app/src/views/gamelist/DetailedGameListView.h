@@ -23,7 +23,7 @@ private:
 	void initMDLabels();
 	void initMDValues();
 
-	ImageComponent mImage;
+	ImageComponent mImage, mBgImage, mBgLogo;
 
 	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblLastPlayed, mLblPlayCount;
 
