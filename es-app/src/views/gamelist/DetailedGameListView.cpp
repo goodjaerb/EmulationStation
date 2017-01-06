@@ -6,7 +6,7 @@
 DetailedGameListView::DetailedGameListView(Window* window, FileData* root) : 
 	BasicGameListView(window, root), 
 	mDescContainer(window), mDescription(window), 
-	mImage(window), mBgImage(window), mBgLogo(window),
+	mImage(window), mBgImage(window), mScreenshot(window),// mBgLogo(window),
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window), 
 	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window),
@@ -29,25 +29,31 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mImage.setMaxSize(mSize.x() * (0.50f - 2*padding), mSize.y() * 0.4f);
 	addChild(&mImage);
 
+	mScreenshot.setOrigin(0.5f, 0.5f);
+	// Default to off the screen
+	mScreenshot.setPosition(2.0f, 2.0f);
+	mScreenshot.setMaxSize(1.0f, 1.0f);
+	addChild(&mScreenshot);
+
 	mBgImage.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mBgImage.setPosition(2.0f, 2.0f);
 	mBgImage.setMaxSize(1.0f, 1.0f);
 	addChild(&mBgImage);
 
-	mBgLogo.setOrigin(0.5f, 0.5f);
+	//mBgLogo.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
-	mBgLogo.setPosition(2.0f, 2.0f);
-	mBgLogo.setMaxSize(1.0f, 1.0f);
-	addChild(&mBgLogo);
+	//mBgLogo.setPosition(2.0f, 2.0f);
+	//mBgLogo.setMaxSize(1.0f, 1.0f);
+	//addChild(&mBgLogo);
 
-	// We want the screenshot to be in front of the background but behind any 'extra' images
+	// We want the background image and logo to be in front of the background but behind any 'extra' images
 	for (std::vector<GuiComponent*>::iterator it = mChildren.begin(); it != mChildren.end(); ++it)
 	{
 		if (*it == &mThemeExtras)
 		{
-			mChildren.insert(it, &mBgLogo);
-			mChildren.pop_back();
+			//mChildren.insert(it, &mBgLogo);
+			//mChildren.pop_back();
 			mChildren.insert(it, &mBgImage);
 			mChildren.pop_back();
 			break;
@@ -102,8 +108,9 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 
 	using namespace ThemeFlags;
 	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE);
+	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE);
 	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE);
-	mBgLogo.applyTheme(theme, getName(), "md_bgLogo", POSITION | ThemeFlags::SIZE);
+	//mBgLogo.applyTheme(theme, getName(), "md_bgLogo", POSITION | ThemeFlags::SIZE);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
@@ -216,8 +223,9 @@ void DetailedGameListView::updateInfoPanel()
 		fadingOut = true;
 	}else{
 		mImage.setImage(file->metadata.get("image"));
+		mScreenshot.setImage(file->metadata.get("screenshot"));
 		mBgImage.setImage(file->metadata.get("bgImage"));
-		mBgLogo.setImage(file->metadata.get("bgLogo"));
+		//mBgLogo.setImage(file->metadata.get("bgLogo"));
 		mDescription.setText(file->metadata.get("desc"));
 		mDescContainer.reset();
 
@@ -238,8 +246,9 @@ void DetailedGameListView::updateInfoPanel()
 
 	std::vector<GuiComponent*> comps = getMDValues();
 	comps.push_back(&mImage);
+	comps.push_back(&mScreenshot);
 	comps.push_back(&mBgImage);
-	comps.push_back(&mBgLogo);
+	//comps.push_back(&mBgLogo);
 	comps.push_back(&mDescription);
 	std::vector<TextComponent*> labels = getMDLabels();
 	comps.insert(comps.end(), labels.begin(), labels.end());
@@ -268,10 +277,13 @@ void DetailedGameListView::launch(FileData* game)
 	Eigen::Vector3f target(Renderer::getScreenWidth() / 2.0f, Renderer::getScreenHeight() / 2.0f, 0);
 	if(mImage.hasImage())
 		target << mImage.getCenter().x(), mImage.getCenter().y(), 0;
+	//idk what these do, but mImage has it done, so my new fields will get it too!
+	if(mScreenshot.hasImage())
+		target << mScreenshot.getCenter().x(), mScreenshot.getCenter().y(), 0;
 	if(mBgImage.hasImage())
 		target << mBgImage.getCenter().x(), mBgImage.getCenter().y(), 0;
-	if(mBgLogo.hasImage())
-		target << mBgLogo.getCenter().x(), mBgLogo.getCenter().y(), 0;
+	//if(mBgLogo.hasImage())
+	//	target << mBgLogo.getCenter().x(), mBgLogo.getCenter().y(), 0;
 
 	ViewController::get()->launch(game, target);
 }
