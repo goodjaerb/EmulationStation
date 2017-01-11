@@ -25,7 +25,7 @@ private:
 
 	ImageComponent mImage, mBgImage, mScreenshot; //mBgLogo, 
 
-	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblLastPlayed, mLblPlayCount;
+	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblFilename, mLblLastPlayed, mLblPlayCount;
 
 	RatingComponent mRating;
 	DateTimeComponent mReleaseDate;
@@ -33,6 +33,7 @@ private:
 	TextComponent mPublisher;
 	TextComponent mGenre;
 	TextComponent mPlayers;
+	TextComponent mFilename;
 	DateTimeComponent mLastPlayed;
 	TextComponent mPlayCount;
 

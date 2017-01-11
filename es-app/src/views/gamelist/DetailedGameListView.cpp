@@ -9,10 +9,10 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mImage(window), mBgImage(window), mScreenshot(window),// mBgLogo(window),
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window), 
-	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window),
+	mLblGenre(window), mLblPlayers(window), mLblFilename(window), mLblLastPlayed(window), mLblPlayCount(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window), 
-	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window)
+	mGenre(window), mPlayers(window), mFilename(window), mLastPlayed(window), mPlayCount(window)
 {
 	//mHeaderImage.setPosition(mSize.x() * 0.25f, 0);
 
@@ -79,6 +79,9 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mLblPlayers.setText("Players: ");
 	addChild(&mLblPlayers);
 	addChild(&mPlayers);
+	mLblFilename.setText("Filename: ");
+	addChild(&mLblFilename);
+	addChild(&mFilename);
 	mLblLastPlayed.setText("Last played: ");
 	addChild(&mLblLastPlayed);
 	mLastPlayed.setDisplayMode(DateTimeComponent::DISP_RELATIVE_TO_NOW);
@@ -114,10 +117,10 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
-	assert(labels.size() == 8);
-	const char* lblElements[8] = {
+	assert(labels.size() == 9);
+	const char* lblElements[9] = {
 		"md_lbl_rating", "md_lbl_releasedate", "md_lbl_developer", "md_lbl_publisher", 
-		"md_lbl_genre", "md_lbl_players", "md_lbl_lastplayed", "md_lbl_playcount"
+		"md_lbl_genre", "md_lbl_players", "md_lbl_filename", "md_lbl_lastplayed", "md_lbl_playcount"
 	};
 
 	for(unsigned int i = 0; i < labels.size(); i++)
@@ -128,10 +131,10 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 
 	initMDValues();
 	std::vector<GuiComponent*> values = getMDValues();
-	assert(values.size() == 8);
-	const char* valElements[8] = {
+	assert(values.size() == 9);
+	const char* valElements[9] = {
 		"md_rating", "md_releasedate", "md_developer", "md_publisher", 
-		"md_genre", "md_players", "md_lastplayed", "md_playcount"
+		"md_genre", "md_players", "md_filename", "md_lastplayed", "md_playcount"
 	};
 
 	for(unsigned int i = 0; i < values.size(); i++)
@@ -190,6 +193,7 @@ void DetailedGameListView::initMDValues()
 	mPublisher.setFont(defaultFont);
 	mGenre.setFont(defaultFont);
 	mPlayers.setFont(defaultFont);
+	mFilename.setFont(defaultFont);
 	mLastPlayed.setFont(defaultFont);
 	mPlayCount.setFont(defaultFont);
 
@@ -237,6 +241,7 @@ void DetailedGameListView::updateInfoPanel()
 			mPublisher.setValue(file->metadata.get("publisher"));
 			mGenre.setValue(file->metadata.get("genre"));
 			mPlayers.setValue(file->metadata.get("players"));
+			mFilename.setValue(file->metadata.get("filename"));
 			mLastPlayed.setValue(file->metadata.get("lastplayed"));
 			mPlayCount.setValue(file->metadata.get("playcount"));
 		}
@@ -297,6 +302,7 @@ std::vector<TextComponent*> DetailedGameListView::getMDLabels()
 	ret.push_back(&mLblPublisher);
 	ret.push_back(&mLblGenre);
 	ret.push_back(&mLblPlayers);
+	ret.push_back(&mLblFilename);
 	ret.push_back(&mLblLastPlayed);
 	ret.push_back(&mLblPlayCount);
 	return ret;
@@ -311,6 +317,7 @@ std::vector<GuiComponent*> DetailedGameListView::getMDValues()
 	ret.push_back(&mPublisher);
 	ret.push_back(&mGenre);
 	ret.push_back(&mPlayers);
+	ret.push_back(&mFilename);
 	ret.push_back(&mLastPlayed);
 	ret.push_back(&mPlayCount);
 	return ret;
