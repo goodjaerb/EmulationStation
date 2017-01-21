@@ -6,7 +6,7 @@
 DetailedGameListView::DetailedGameListView(Window* window, FileData* root) : 
 	BasicGameListView(window, root), 
 	mDescContainer(window), mDescription(window), 
-	mImage(window), mBgImage(window), mScreenshot(window),// mBgLogo(window),
+	mImage(window), mBgImage(window), mScreenshot(window), mScreenshot2(window),// mBgLogo(window),
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window), 
 	mLblGenre(window), mLblPlayers(window), mLblFilename(window), mLblLastPlayed(window), mLblPlayCount(window),
@@ -34,6 +34,12 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mScreenshot.setPosition(2.0f, 2.0f);
 	mScreenshot.setMaxSize(1.0f, 1.0f);
 	addChild(&mScreenshot);
+
+	mScreenshot2.setOrigin(0.5f, 0.5f);
+	// Default to off the screen
+	mScreenshot2.setPosition(2.0f, 2.0f);
+	mScreenshot2.setMaxSize(1.0f, 1.0f);
+	addChild(&mScreenshot2);
 
 	mBgImage.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
@@ -112,6 +118,7 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	using namespace ThemeFlags;
 	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE);
 	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE);
+	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE);
 	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE);
 	//mBgLogo.applyTheme(theme, getName(), "md_bgLogo", POSITION | ThemeFlags::SIZE);
 
@@ -228,6 +235,7 @@ void DetailedGameListView::updateInfoPanel()
 	}else{
 		mImage.setImage(file->metadata.get("image"));
 		mScreenshot.setImage(file->metadata.get("screenshot"));
+		mScreenshot2.setImage(file->metadata.get("screenshot2"));
 		mBgImage.setImage(file->metadata.get("bgImage"));
 		//mBgLogo.setImage(file->metadata.get("bgLogo"));
 		mDescription.setText(file->metadata.get("desc"));
@@ -252,6 +260,7 @@ void DetailedGameListView::updateInfoPanel()
 	std::vector<GuiComponent*> comps = getMDValues();
 	comps.push_back(&mImage);
 	comps.push_back(&mScreenshot);
+	comps.push_back(&mScreenshot2);
 	comps.push_back(&mBgImage);
 	//comps.push_back(&mBgLogo);
 	comps.push_back(&mDescription);
@@ -285,6 +294,8 @@ void DetailedGameListView::launch(FileData* game)
 	//idk what these do, but mImage has it done, so my new fields will get it too!
 	if(mScreenshot.hasImage())
 		target << mScreenshot.getCenter().x(), mScreenshot.getCenter().y(), 0;
+	if(mScreenshot2.hasImage())
+		target << mScreenshot2.getCenter().x(), mScreenshot2.getCenter().y(), 0;
 	if(mBgImage.hasImage())
 		target << mBgImage.getCenter().x(), mBgImage.getCenter().y(), 0;
 	//if(mBgLogo.hasImage())

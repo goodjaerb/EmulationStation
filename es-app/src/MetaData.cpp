@@ -17,6 +17,7 @@ MetaDataDecl gameDecls[] = {
 	{"bgImage",		MD_PATH,				"",				false,		"bgImage",			"enter path to bgImage"},
 	//{"bgLogo",		MD_PATH,				"",				false,		"bgLogo",			"enter path to bgLogo"},
 	{"screenshot",		MD_PATH,				"",				false,		"screenshot",			"enter path to screenshot"},
+	{"screenshot2",		MD_PATH,				"",				false,		"screenshot2",			"enter path to screenshot2"},
 	{"video",		MD_PATH		,			"", 				false,		"video",			"enter path to video"},
 	{"marquee",		MD_PATH,				"", 				false,		"marquee",			"enter path to marquee"},
 	{"thumbnail",		MD_PATH,				"", 				false,		"thumbnail",			"enter path to thumbnail"},
