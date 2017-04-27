@@ -12,7 +12,7 @@
 #include "animations/LaunchAnimation.h"
 #include "animations/MoveCameraAnimation.h"
 #include "animations/LambdaAnimation.h"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 ViewController* ViewController::sInstance = NULL;
 
@@ -117,6 +117,37 @@ void ViewController::goToGameList(SystemData* system)
 		mCurrentView->onShow();
 	}
 	playViewTransition();
+}
+
+void ViewController::goToRandomGame()
+{
+	unsigned int total = 0;
+	for(auto it = SystemData::sSystemVector.begin(); it != SystemData::sSystemVector.end(); it++)
+	{
+		if ((*it)->getName() != "retropie")
+			total += (*it)->getGameCount();
+	}
+	
+	// get random number in range
+	int target = std::round(((double)std::rand() / (double)RAND_MAX) * total);
+	
+	for (auto it = SystemData::sSystemVector.begin(); it != SystemData::sSystemVector.end(); it++)
+	{
+		if ((*it)->getName() != "retropie")
+		{
+			if ((target - (int)(*it)->getGameCount()) >= 0)
+			{
+				target -= (int)(*it)->getGameCount();
+			}
+			else
+			{
+				goToGameList(*it);
+				std::vector<FileData*> list = (*it)->getRootFolder()->getFilesRecursive(GAME);
+				getGameListView(*it)->setCursor(list.at(target));
+				return;
+			}
+		}
+	}
 }
 
 void ViewController::playViewTransition()

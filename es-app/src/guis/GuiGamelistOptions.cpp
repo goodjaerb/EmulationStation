@@ -35,6 +35,19 @@ GuiGamelistOptions::GuiGamelistOptions(Window* window, SystemData* system) : Gui
 	};
 	mMenu.addRow(row);
 
+	row.elements.clear();
+	row.addElement(std::make_shared<TextComponent>(mWindow, "SURPRISE ME!", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+	row.input_handler = [&](InputConfig* config, Input input) {
+		if (config->isMappedTo("a", input) && input.value)
+		{
+			ViewController::get()->goToRandomGame();
+			delete this;
+			return true;
+		}
+		return false;
+	};
+	mMenu.addRow(row);
+
 	// sort list by
 	mListSort = std::make_shared<SortList>(mWindow, "SORT GAMES BY", false);
 	for(unsigned int i = 0; i < FileSorts::SortTypes.size(); i++)
@@ -74,10 +87,22 @@ void GuiGamelistOptions::openMetaDataEd()
 	ScraperSearchParams p;
 	p.game = file;
 	p.system = file->getSystem();
-	mWindow->pushGui(new GuiMetaDataEd(mWindow, &file->metadata, file->metadata.getMDD(), p, file->getPath().filename().string(), 
-		std::bind(&IGameListView::onFileChanged, getGamelist(), file, FILE_METADATA_CHANGED), [this, file] { 
+
+	std::function<void()> deleteBtnFunc;
+
+	if (file->getType() == FOLDER)
+	{
+		deleteBtnFunc = NULL;
+	}
+	else
+	{
+		deleteBtnFunc = [this, file] {
 			getGamelist()->remove(file);
-	}));
+		};
+	}
+
+	mWindow->pushGui(new GuiMetaDataEd(mWindow, &file->metadata, file->metadata.getMDD(), p, file->getPath().filename().string(), 
+		std::bind(&IGameListView::onFileChanged, getGamelist(), file, FILE_METADATA_CHANGED), deleteBtnFunc));
 }
 
 void GuiGamelistOptions::jumpToLetter()
