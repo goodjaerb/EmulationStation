@@ -6,7 +6,7 @@
 DetailedGameListView::DetailedGameListView(Window* window, FileData* root) : 
 	BasicGameListView(window, root), 
 	mDescContainer(window), mDescription(window), 
-	mImage(window), mBgImage(window), mScreenshot(window), mScreenshot2(window),// mBgLogo(window),
+	mImage(window), mBgImage(window), mScreenshot(window), mScreenshot2(window),
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window), 
 	mLblGenre(window), mLblPlayers(window), mLblFilename(window), mLblLastPlayed(window), mLblPlayCount(window),
@@ -34,38 +34,22 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	// Default to off the screen
 	mScreenshot.setPosition(2.0f, 2.0f);
 	mScreenshot.setMaxSize(1.0f, 1.0f);
+	mScreenshot.setDefaultZIndex(30);
 	addChild(&mScreenshot);
 
 	mScreenshot2.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mScreenshot2.setPosition(2.0f, 2.0f);
 	mScreenshot2.setMaxSize(1.0f, 1.0f);
+	mScreenshot2.setDefaultZIndex(30);
 	addChild(&mScreenshot2);
 
 	mBgImage.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mBgImage.setPosition(2.0f, 2.0f);
 	mBgImage.setMaxSize(1.0f, 1.0f);
+	mBgImage.setDefaultZIndex(5);
 	addChild(&mBgImage);
-
-	//mBgLogo.setOrigin(0.5f, 0.5f);
-	// Default to off the screen
-	//mBgLogo.setPosition(2.0f, 2.0f);
-	//mBgLogo.setMaxSize(1.0f, 1.0f);
-	//addChild(&mBgLogo);
-
-	// We want the background image and logo to be in front of the background but behind any 'extra' images
-	for (std::vector<GuiComponent*>::iterator it = mChildren.begin(); it != mChildren.end(); ++it)
-	{
-		if (*it == &mThemeExtras)
-		{
-			//mChildren.insert(it, &mBgLogo);
-			//mChildren.pop_back();
-			mChildren.insert(it, &mBgImage);
-			mChildren.pop_back();
-			break;
-		}
-	}
 
 	// metadata labels + values
 	mLblRating.setText("Rating: ");
@@ -122,7 +106,6 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE);
 	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE);
 	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE);
-	//mBgLogo.applyTheme(theme, getName(), "md_bgLogo", POSITION | ThemeFlags::SIZE);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
@@ -243,7 +226,6 @@ void DetailedGameListView::updateInfoPanel()
 		mScreenshot.setImage(file->metadata.get("screenshot"));
 		mScreenshot2.setImage(file->metadata.get("screenshot2"));
 		mBgImage.setImage(file->metadata.get("bgImage"));
-		//mBgLogo.setImage(file->metadata.get("bgLogo"));
 		mDescription.setText(file->metadata.get("desc"));
 		mDescContainer.reset();
 
@@ -269,7 +251,6 @@ void DetailedGameListView::updateInfoPanel()
 	comps.push_back(&mScreenshot);
 	comps.push_back(&mScreenshot2);
 	comps.push_back(&mBgImage);
-	//comps.push_back(&mBgLogo);
 	comps.push_back(&mDescription);
 	std::vector<TextComponent*> labels = getMDLabels();
 	comps.insert(comps.end(), labels.begin(), labels.end());
@@ -305,8 +286,6 @@ void DetailedGameListView::launch(FileData* game)
 		target << mScreenshot2.getCenter().x(), mScreenshot2.getCenter().y(), 0;
 	if(mBgImage.hasImage())
 		target << mBgImage.getCenter().x(), mBgImage.getCenter().y(), 0;
-	//if(mBgLogo.hasImage())
-	//	target << mBgLogo.getCenter().x(), mBgLogo.getCenter().y(), 0;
 
 	ViewController::get()->launch(game, target);
 }
