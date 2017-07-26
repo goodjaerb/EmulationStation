@@ -60,6 +60,7 @@ void Settings::setDefaults()
 	mBoolMap["IgnoreGamelist"] = false;
 	mBoolMap["HideConsole"] = true;
 	mBoolMap["QuickSystemSelect"] = true;
+	mBoolMap["MoveCarousel"] = true;
 	mBoolMap["SaveGamelistsOnExit"] = true;
 
 	mBoolMap["Debug"] = false;
@@ -95,6 +96,7 @@ void Settings::setDefaults()
 	mBoolMap["CaptionsCompatibility"] = true;
 	// Audio out device for Video playback using OMX player.
 	mStringMap["OMXAudioDev"] = "both";
+	mStringMap["CollectionSystemsAuto"] = "";
 
 	// Audio out device for volume control
 	#ifdef _RPI_

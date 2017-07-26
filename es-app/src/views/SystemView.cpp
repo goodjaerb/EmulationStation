@@ -43,21 +43,27 @@ void SystemView::populate()
 		// make logo
 		if(theme->getElement("system", "logo", "image"))
 		{
-			ImageComponent* logo = new ImageComponent(mWindow, false, false);
-			logo->setMaxSize(Eigen::Vector2f(mCarousel.logoSize.x(), mCarousel.logoSize.y()));
-			logo->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH);
-			logo->setPosition((mCarousel.logoSize.x() - logo->getSize().x()) / 2,
-				(mCarousel.logoSize.y() - logo->getSize().y()) / 2); // center
-			e.data.logo = std::shared_ptr<GuiComponent>(logo);
+			std::string path = theme->getElement("system", "logo", "image")->get<std::string>("path");
 
-			ImageComponent* logoSelected = new ImageComponent(mWindow, false, false);
-			logoSelected->setMaxSize(Eigen::Vector2f(mCarousel.logoSize.x() * mCarousel.logoScale, mCarousel.logoSize.y() * mCarousel.logoScale));
-			logoSelected->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH | ThemeFlags::COLOR);
-			logoSelected->setPosition((mCarousel.logoSize.x() - logoSelected->getSize().x()) / 2,
-				(mCarousel.logoSize.y() - logoSelected->getSize().y()) / 2); // center
-			e.data.logoSelected = std::shared_ptr<GuiComponent>(logoSelected);
+			if(!path.empty() && ResourceManager::getInstance()->fileExists(path))
+			{
+				ImageComponent* logo = new ImageComponent(mWindow, false, false);
+				logo->setMaxSize(Eigen::Vector2f(mCarousel.logoSize.x(), mCarousel.logoSize.y()));
+				logo->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH | ThemeFlags::COLOR);
+				logo->setPosition((mCarousel.logoSize.x() - logo->getSize().x()) / 2,
+					(mCarousel.logoSize.y() - logo->getSize().y()) / 2); // center
+				e.data.logo = std::shared_ptr<GuiComponent>(logo);
 
-		}else{
+				ImageComponent* logoSelected = new ImageComponent(mWindow, false, false);
+				logoSelected->setMaxSize(Eigen::Vector2f(mCarousel.logoSize.x() * mCarousel.logoScale, mCarousel.logoSize.y() * mCarousel.logoScale));
+				logoSelected->applyTheme((*it)->getTheme(), "system", "logo", ThemeFlags::PATH | ThemeFlags::COLOR);
+				logoSelected->setPosition((mCarousel.logoSize.x() - logoSelected->getSize().x()) / 2,
+					(mCarousel.logoSize.y() - logoSelected->getSize().y()) / 2); // center
+				e.data.logoSelected = std::shared_ptr<GuiComponent>(logoSelected);
+			}
+		}
+		if (!e.data.logo)
+		{
 			// no logo in theme; use text
 			TextComponent* text = new TextComponent(mWindow,
 				(*it)->getName(),
@@ -65,14 +71,16 @@ void SystemView::populate()
 				0x000000FF,
 				ALIGN_CENTER);
 			text->setSize(mCarousel.logoSize);
+			text->applyTheme((*it)->getTheme(), "system", "logoText", ThemeFlags::FONT_PATH | ThemeFlags::COLOR | ThemeFlags::FORCE_UPPERCASE);
 			e.data.logo = std::shared_ptr<GuiComponent>(text);
 
-			TextComponent* textSelected = new TextComponent(mWindow,
-				(*it)->getName(),
-				Font::get((int)(FONT_SIZE_LARGE * 1.5)),
+			TextComponent* textSelected = new TextComponent(mWindow, 
+				(*it)->getName(), 
+				Font::get((int)(FONT_SIZE_LARGE * mCarousel.logoScale)),
 				0x000000FF,
 				ALIGN_CENTER);
 			textSelected->setSize(mCarousel.logoSize);
+			textSelected->applyTheme((*it)->getTheme(), "system", "logoText", ThemeFlags::FONT_PATH | ThemeFlags::COLOR | ThemeFlags::FORCE_UPPERCASE);
 			e.data.logoSelected = std::shared_ptr<GuiComponent>(textSelected);
 		}
 
@@ -149,7 +157,10 @@ bool SystemView::input(InputConfig* config, Input input)
 		}
 		if (config->isMappedTo("x", input))
 		{
-			ViewController::get()->goToRandomGame();
+			// get random system
+			// go to system
+			setCursor(SystemData::getRandomSystem());
+			//ViewController::get()->goToRandomGame();
 			return true;
 		}
 	}else{
@@ -216,7 +227,7 @@ void SystemView::onCursorChanged(const CursorState& state)
 	setAnimation(infoFadeOut, 0, [this, gameCount] {
 		std::stringstream ss;
 
-		if (getSelected()->getName() == "retropie")
+		if (!getSelected()->isGameSystem())
 			ss << "CONFIGURATION";
 		// only display a game count if there are at least 2 games
 		else if(gameCount > 1)
@@ -243,12 +254,13 @@ void SystemView::onCursorChanged(const CursorState& state)
 		return;
 
 	Animation* anim;
+	bool move_carousel = Settings::getInstance()->getBool("MoveCarousel");
 	std::string transition_style = Settings::getInstance()->getString("TransitionStyle");
 	if(transition_style == "fade")
 	{
 		float startExtrasFade = mExtrasFadeOpacity;
 		anim = new LambdaAnimation(
-			[startExtrasFade, startPos, endPos, posMax, this](float t)
+			[this, startExtrasFade, startPos, endPos, posMax, move_carousel](float t)
 		{
 			t -= 1;
 			float f = lerp<float>(startPos, endPos, t*t*t + 1);
@@ -257,7 +269,7 @@ void SystemView::onCursorChanged(const CursorState& state)
 			if(f >= posMax)
 				f -= posMax;
 
-			this->mCamOffset = f;
+			this->mCamOffset = move_carousel ? f : endPos;
 
 			t += 1;
 			if(t < 0.3f)
@@ -274,7 +286,7 @@ void SystemView::onCursorChanged(const CursorState& state)
 	} else if (transition_style == "slide") {
 		// slide
 		anim = new LambdaAnimation(
-			[this, startPos, endPos, posMax](float t)
+			[this, startPos, endPos, posMax, move_carousel](float t)
 		{
 			t -= 1;
 			float f = lerp<float>(startPos, endPos, t*t*t + 1);
@@ -283,32 +295,24 @@ void SystemView::onCursorChanged(const CursorState& state)
 			if(f >= posMax)
 				f -= posMax;
 
-			this->mCamOffset = f;
+			this->mCamOffset = move_carousel ? f : endPos;
 			this->mExtrasCamOffset = f;
-		}, 500);
-	} else if (transition_style == "simple slide") {
-		// simple slide
-		anim = new LambdaAnimation(
-			[this, startPos, endPos, posMax](float t)
-		{
-			t -= 1;
-			float f = lerp<float>(startPos, endPos, t*t*t + 1);
-			if(f < 0)
-				f += posMax;
-			if(f >= posMax)
-				f -= posMax;
-
-			this->mCamOffset = f;
-			this->mExtrasCamOffset = endPos;
 		}, 500);
 	} else {
 		// instant
 		anim = new LambdaAnimation(
-			[this, endPos](float t)
+			[this, startPos, endPos, posMax, move_carousel ](float t)
 		{
-			this->mCamOffset = endPos;
+			t -= 1;
+			float f = lerp<float>(startPos, endPos, t*t*t + 1);
+			if(f < 0)
+				f += posMax;
+			if(f >= posMax)
+				f -= posMax;
+
+			this->mCamOffset = move_carousel ? f : endPos;
 			this->mExtrasCamOffset = endPos;
-		}, 1);
+		}, move_carousel ? 500 : 1);
 	}
 
 

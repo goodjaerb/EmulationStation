@@ -2,6 +2,7 @@
 #include "GuiMetaDataEd.h"
 #include "views/gamelist/IGameListView.h"
 #include "views/ViewController.h"
+#include "CollectionSystemManager.h"
 
 GuiGamelistOptions::GuiGamelistOptions(Window* window, SystemData* system) : GuiComponent(window),
 	mSystem(system), mMenu(window, "OPTIONS"), fromPlaceholder(false), mFiltersChanged(false)
@@ -13,26 +14,6 @@ GuiGamelistOptions::GuiGamelistOptions(Window* window, SystemData* system) : Gui
 	fromPlaceholder = file->isPlaceHolder();
 	bool isFiltered = system->getIndex()->isFiltered();
 	ComponentListRow row;
-
-	// show filtered menu
-	row.elements.clear();
-	row.addElement(std::make_shared<TextComponent>(mWindow, "FILTER GAMELIST", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
-	row.addElement(makeArrow(mWindow), false);
-	row.makeAcceptInputHandler(std::bind(&GuiGamelistOptions::openGamelistFilter, this));
-	mMenu.addRow(row);
-
-	row.elements.clear();
-	row.addElement(std::make_shared<TextComponent>(mWindow, "SURPRISE ME!", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
-	row.input_handler = [&](InputConfig* config, Input input) {
-		if (config->isMappedTo("a", input) && input.value)
-		{
-			ViewController::get()->goToRandomGame();
-			delete this;
-			return true;
-		}
-		return false;
-	};
-	mMenu.addRow(row);
 
 	if (!fromPlaceholder) {
 
@@ -81,6 +62,13 @@ GuiGamelistOptions::GuiGamelistOptions(Window* window, SystemData* system) : Gui
 		mMenu.addRow(row);
 	}
 
+	// show filtered menu
+	row.elements.clear();
+	row.addElement(std::make_shared<TextComponent>(mWindow, "FILTER GAMELIST", Font::get(FONT_SIZE_MEDIUM), 0x777777FF), true);
+	row.addElement(makeArrow(mWindow), false);
+	row.makeAcceptInputHandler(std::bind(&GuiGamelistOptions::openGamelistFilter, this));
+	mMenu.addRow(row);
+
 	// center the menu
 	setSize((float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight());
 	mMenu.setPosition((mSize.x() - mMenu.getSize().x()) / 2, (mSize.y() - mMenu.getSize().y()) / 2);
@@ -122,7 +110,8 @@ void GuiGamelistOptions::openGamelistFilter()
 void GuiGamelistOptions::openMetaDataEd()
 {
 	// open metadata editor
-	FileData* file = getGamelist()->getCursor();
+	// get the FileData that hosts the original metadata
+	FileData* file = getGamelist()->getCursor()->getSourceFileData();
 	ScraperSearchParams p;
 	p.game = file;
 	p.system = file->getSystem();
@@ -136,12 +125,13 @@ void GuiGamelistOptions::openMetaDataEd()
 	else
 	{
 		deleteBtnFunc = [this, file] {
-			getGamelist()->remove(file);
+			CollectionSystemManager::get()->deleteCollectionFiles(file);
+			ViewController::get()->getGameListView(file->getSystem()).get()->remove(file, true);
 		};
 	}
 
 	mWindow->pushGui(new GuiMetaDataEd(mWindow, &file->metadata, file->metadata.getMDD(), p, file->getPath().filename().string(),
-		std::bind(&IGameListView::onFileChanged, getGamelist(), file, FILE_METADATA_CHANGED), deleteBtnFunc));
+		std::bind(&IGameListView::onFileChanged, ViewController::get()->getGameListView(file->getSystem()).get(), file, FILE_METADATA_CHANGED), deleteBtnFunc));
 }
 
 void GuiGamelistOptions::jumpToLetter()

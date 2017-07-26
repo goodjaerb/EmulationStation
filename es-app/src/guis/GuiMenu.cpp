@@ -7,6 +7,7 @@
 #include "guis/GuiMsgBox.h"
 #include "guis/GuiSettings.h"
 #include "guis/GuiScreensaverOptions.h"
+#include "guis/GuiCollectionSystemsOptions.h"
 #include "guis/GuiScraperStart.h"
 #include "guis/GuiDetectDevice.h"
 #include "views/ViewController.h"
@@ -70,6 +71,12 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 		[this] {
 			auto s = new GuiSettings(mWindow, "SOUND SETTINGS");
 
+			// volume
+			auto volume = std::make_shared<SliderComponent>(mWindow, 0.f, 100.f, 1.f, "%");
+			volume->setValue((float)VolumeControl::getInstance()->getVolume());
+			s->addWithLabel("SYSTEM VOLUME", volume);
+			s->addSaveFunc([volume] { VolumeControl::getInstance()->setVolume((int)round(volume->getValue())); });
+
 			#ifdef _RPI_
 				// volume control device
 				auto vol_dev = std::make_shared< OptionListComponent<std::string> >(mWindow, "AUDIO DEVICE", false);
@@ -86,12 +93,6 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 					VolumeControl::getInstance()->init();
 				});
 			#endif
-
-			// volume
-			auto volume = std::make_shared<SliderComponent>(mWindow, 0.f, 100.f, 1.f, "%");
-			volume->setValue((float)VolumeControl::getInstance()->getVolume());
-			s->addWithLabel("SYSTEM VOLUME", volume);
-			s->addSaveFunc([volume] { VolumeControl::getInstance()->setVolume((int)round(volume->getValue())); });
 
 			// disable sounds
 			auto sounds_enabled = std::make_shared<SwitchComponent>(mWindow);
@@ -170,12 +171,17 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 			s->addWithLabel("QUICK SYSTEM SELECT", quick_sys_select);
 			s->addSaveFunc([quick_sys_select] { Settings::getInstance()->setBool("QuickSystemSelect", quick_sys_select->getState()); });
 
+			// carousel transition option
+			auto move_carousel = std::make_shared<SwitchComponent>(mWindow);
+			move_carousel->setState(Settings::getInstance()->getBool("MoveCarousel"));
+			s->addWithLabel("CAROUSEL TRANSITIONS", move_carousel);
+			s->addSaveFunc([move_carousel] { Settings::getInstance()->setBool("MoveCarousel", move_carousel->getState()); });
+
 			// transition style
 			auto transition_style = std::make_shared< OptionListComponent<std::string> >(mWindow, "TRANSITION STYLE", false);
 			std::vector<std::string> transitions;
 			transitions.push_back("fade");
 			transitions.push_back("slide");
-			transitions.push_back("simple slide");
 			transitions.push_back("instant");
 			for(auto it = transitions.begin(); it != transitions.end(); it++)
 				transition_style->add(*it, *it, Settings::getInstance()->getString("TransitionStyle") == *it);
@@ -238,9 +244,18 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 			mWindow->pushGui(s);
 	});
 
+	addEntry("GAME COLLECTION SETTINGS", 0x777777FF, true,
+		[this] { openCollectionSystemSettings();
+		});
 	addEntry("OTHER SETTINGS", 0x777777FF, true,
 		[this] {
 			auto s = new GuiSettings(mWindow, "OTHER SETTINGS");
+
+			// maximum vram
+			auto max_vram = std::make_shared<SliderComponent>(mWindow, 0.f, 1000.f, 10.f, "Mb");
+			max_vram->setValue((float)(Settings::getInstance()->getInt("MaxVRAM")));
+			s->addWithLabel("VRAM LIMIT", max_vram);
+			s->addSaveFunc([max_vram] { Settings::getInstance()->setInt("MaxVRAM", (int)round(max_vram->getValue())); });
 
 			// gamelists
 			auto save_gamelists = std::make_shared<SwitchComponent>(mWindow);
@@ -272,12 +287,6 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 			});
 
 #endif
-
-			// maximum vram
-			auto max_vram = std::make_shared<SliderComponent>(mWindow, 0.f, 1000.f, 10.f, "Mb");
-			max_vram->setValue((float)(Settings::getInstance()->getInt("MaxVRAM")));
-			s->addWithLabel("VRAM LIMIT", max_vram);
-			s->addSaveFunc([max_vram] { Settings::getInstance()->setInt("MaxVRAM", (int)round(max_vram->getValue())); });
 
 			// framerate
 			auto framerate = std::make_shared<SwitchComponent>(mWindow);
@@ -369,8 +378,11 @@ GuiMenu::GuiMenu(Window* window) : GuiComponent(window), mMenu(window, "MAIN MEN
 }
 
 void GuiMenu::openScreensaverOptions() {
-	GuiScreensaverOptions* ggf = new GuiScreensaverOptions(mWindow, "VIDEO SCREENSAVER");
-	mWindow->pushGui(ggf);
+	mWindow->pushGui(new GuiScreensaverOptions(mWindow, "VIDEO SCREENSAVER"));
+}
+
+void GuiMenu::openCollectionSystemSettings() {
+	mWindow->pushGui(new GuiCollectionSystemsOptions(mWindow));
 }
 
 void GuiMenu::onSizeChanged()
