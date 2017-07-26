@@ -101,11 +101,12 @@ void ImageComponent::onSizeChanged()
 
 void ImageComponent::setImage(std::string path, bool tile)
 {
-	if(path.empty() || !ResourceManager::getInstance()->fileExists(path))
+	if(path.empty() || !ResourceManager::getInstance()->fileExists(path)) {
 		mTexture.reset();
-	else
+	}
+	else {
 		mTexture = TextureResource::get(path, tile, mForceLoad, mDynamic);
-
+	}
 	resize();
 }
 
@@ -356,6 +357,7 @@ void ImageComponent::applyTheme(const std::shared_ptr<ThemeData>& theme, const s
 
 	if(properties & PATH && elem->has("path"))
 	{
+		LOG(LogInfo) << "ImageComponent::applyTheme";
 		bool tile = (elem->has("tile") && elem->get<bool>("tile"));
 		setImage(elem->get<std::string>("path"), tile);
 	}

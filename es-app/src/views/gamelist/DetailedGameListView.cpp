@@ -91,7 +91,6 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mDescription.setSize(mDescContainer.getSize().x(), 0);
 	mDescContainer.addChild(&mDescription);
 
-
 	initMDLabels();
 	initMDValues();
 	updateInfoPanel();
@@ -102,10 +101,10 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	BasicGameListView::onThemeChanged(theme);
 
 	using namespace ThemeFlags;
-	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE);
-	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE);
-	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE);
-	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE);
+	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE | Z_INDEX);
+	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX);
+	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX);
+	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
@@ -279,7 +278,6 @@ void DetailedGameListView::launch(FileData* game)
 	Eigen::Vector3f target(Renderer::getScreenWidth() / 2.0f, Renderer::getScreenHeight() / 2.0f, 0);
 	if(mImage.hasImage())
 		target << mImage.getCenter().x(), mImage.getCenter().y(), 0;
-	//idk what these do, but mImage has it done, so my new fields will get it too!
 	if(mScreenshot.hasImage())
 		target << mScreenshot.getCenter().x(), mScreenshot.getCenter().y(), 0;
 	if(mScreenshot2.hasImage())
