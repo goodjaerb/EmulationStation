@@ -357,7 +357,6 @@ void ImageComponent::applyTheme(const std::shared_ptr<ThemeData>& theme, const s
 
 	if(properties & PATH && elem->has("path"))
 	{
-		LOG(LogInfo) << "ImageComponent::applyTheme";
 		bool tile = (elem->has("tile") && elem->get<bool>("tile"));
 		setImage(elem->get<std::string>("path"), tile);
 	}
