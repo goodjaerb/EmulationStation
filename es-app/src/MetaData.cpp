@@ -23,7 +23,7 @@ MetaDataDecl gameDecls[] = {
 	{"genre",		MD_STRING,				"unknown",			false,		"genre",			"enter game genre"},
 	{"filename",		MD_STRING,				"unknown",			false,		"filename",			"enter the filename"},
 	{"players",		MD_INT,					"1",				false,		"players",			"enter number of players"},
-	{"favorite",    MD_BOOL,                "false",            false,      "favorite",             "enter favorite off/on"},
+	{"favorite",    	MD_BOOL,                		"false",            		false,      	"favorite",             	"enter favorite off/on"},
 	{"playcount",		MD_INT,					"0",				true,		"play count",			"enter number of times played"},
 	{"lastplayed",		MD_TIME,				"0", 				true,		"last played",			"enter last played date"}
 };

@@ -42,5 +42,3 @@ private:
 	ScrollableContainer mDescContainer;
 	TextComponent mDescription;
 };
-
-

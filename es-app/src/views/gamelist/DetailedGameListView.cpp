@@ -33,21 +33,18 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mScreenshot.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mScreenshot.setPosition(2.0f, 2.0f);
-	mScreenshot.setMaxSize(1.0f, 1.0f);
 	mScreenshot.setDefaultZIndex(30);
 	addChild(&mScreenshot);
 
 	mScreenshot2.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mScreenshot2.setPosition(2.0f, 2.0f);
-	mScreenshot2.setMaxSize(1.0f, 1.0f);
 	mScreenshot2.setDefaultZIndex(30);
 	addChild(&mScreenshot2);
 
 	mBgImage.setOrigin(0.5f, 0.5f);
 	// Default to off the screen
 	mBgImage.setPosition(2.0f, 2.0f);
-	mBgImage.setMaxSize(1.0f, 1.0f);
 	mBgImage.setDefaultZIndex(5);
 	addChild(&mBgImage);
 
