@@ -1,9 +1,11 @@
 #pragma once
+#ifndef ES_APP_VIEWS_GAME_LIST_ISIMPLE_GAME_LIST_VIEW_H
+#define ES_APP_VIEWS_GAME_LIST_ISIMPLE_GAME_LIST_VIEW_H
 
-#include "views/gamelist/IGameListView.h"
-
-#include "components/TextComponent.h"
 #include "components/ImageComponent.h"
+#include "components/TextComponent.h"
+#include "views/gamelist/IGameListView.h"
+#include <stack>
 
 class ISimpleGameListView : public IGameListView
 {
@@ -26,6 +28,8 @@ public:
 	virtual void launch(FileData* game) = 0;
 
 protected:
+	virtual std::string getQuickSystemSelectRightButton() = 0;
+	virtual std::string getQuickSystemSelectLeftButton() = 0;
 	virtual void populateList(const std::vector<FileData*>& files) = 0;
 
 	TextComponent mHeaderText;
@@ -36,3 +40,5 @@ protected:
 
 	std::stack<FileData*> mCursorStack;
 };
+
+#endif // ES_APP_VIEWS_GAME_LIST_ISIMPLE_GAME_LIST_VIEW_H

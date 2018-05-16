@@ -1,21 +1,15 @@
 #include "guis/GuiDetectDevice.h"
-#include "Window.h"
-#include "Renderer.h"
-#include "resources/Font.h"
-#include "guis/GuiInputConfig.h"
+
 #include "components/TextComponent.h"
-#include <iostream>
-#include <string>
-#include <sstream>
-#include "Util.h"
-#include <boost/filesystem.hpp>
-#include <boost/locale.hpp>
+#include "guis/GuiInputConfig.h"
+#include "utils/FileSystemUtil.h"
+#include "utils/StringUtil.h"
+#include "InputManager.h"
+#include "PowerSaver.h"
+#include "Renderer.h"
+#include "Window.h"
 
 #define HOLD_TIME 1000
-
-using namespace Eigen;
-
-namespace fs = boost::filesystem;
 
 GuiDetectDevice::GuiDetectDevice(Window* window, bool firstRun, const std::function<void()>& doneCallback) : GuiComponent(window), mFirstRun(firstRun), 
 	mBackground(window, ":/frame.png"), mGrid(window, Vector2i(1, 5))
@@ -74,21 +68,24 @@ void GuiDetectDevice::onSizeChanged()
 
 bool GuiDetectDevice::input(InputConfig* config, Input input)
 {
+	PowerSaver::pause();
+
 	if(!mFirstRun && input.device == DEVICE_KEYBOARD && input.type == TYPE_KEY && input.value && input.id == SDLK_ESCAPE)
 	{
 		// cancel configuring
+		PowerSaver::resume();
 		delete this;
 		return true;
 	}
 
-	if(input.type == TYPE_BUTTON || input.type == TYPE_KEY)
+	if(input.type == TYPE_BUTTON || input.type == TYPE_KEY ||input.type == TYPE_CEC_BUTTON)
 	{
 		if(input.value && mHoldingConfig == NULL)
 		{
 			// started holding
 			mHoldingConfig = config;
 			mHoldTime = HOLD_TIME;
-			mDeviceHeld->setText(strToUpper(config->getDeviceName()));
+			mDeviceHeld->setText(Utils::String::toUpper(config->getDeviceName()));
 		}else if(!input.value && mHoldingConfig == config)
 		{
 			// cancel
@@ -105,10 +102,11 @@ void GuiDetectDevice::update(int deltaTime)
 	if(mHoldingConfig)
 	{
 		// If ES starts and if a known device is connected after startup skip controller configuration
-		if(mFirstRun && fs::exists(InputManager::getConfigPath()) && InputManager::getInstance()->getNumConfiguredDevices() > 0)
+		if(mFirstRun && Utils::FileSystem::exists(InputManager::getConfigPath()) && InputManager::getInstance()->getNumConfiguredDevices() > 0)
 		{
 			if(mDoneCallback)
 				mDoneCallback();
+			PowerSaver::resume();
 			delete this; // delete GUI element
 		}
 		else
@@ -121,6 +119,7 @@ void GuiDetectDevice::update(int deltaTime)
 			{
 				// picked one!
 				mWindow->pushGui(new GuiInputConfig(mWindow, mHoldingConfig, true, mDoneCallback));
+				PowerSaver::resume();
 				delete this;
 			}
 		}

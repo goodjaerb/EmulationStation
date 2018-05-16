@@ -9,15 +9,35 @@ Building
 
 EmulationStation uses some C++11 code, which means you'll need to use at least g++-4.7 on Linux, or VS2010 on Windows, to compile.
 
-EmulationStation has a few dependencies. For building, you'll need CMake, SDL2, Boost (System, Filesystem, DateTime, Locale), FreeImage, FreeType, Eigen3, and cURL.  You also should probably install the `fonts-droid` package which contains fallback fonts for Chinese/Japanese/Korean characters, but ES will still work fine without it (this package is only used at run-time).
+EmulationStation has a few dependencies. For building, you'll need CMake, SDL2, FreeImage, FreeType, and cURL.  You also should probably install the `fonts-droid` package which contains fallback fonts for Chinese/Japanese/Korean characters, but ES will still work fine without it (this package is only used at run-time).
 
 **On Debian/Ubuntu:**
 All of this be easily installed with apt-get:
 ```bash
-sudo apt-get install libsdl2-dev libboost-system-dev libboost-filesystem-dev libboost-date-time-dev \
-  libboost-locale-dev libfreeimage-dev libfreetype6-dev libeigen3-dev libcurl4-openssl-dev \
+sudo apt-get install libsdl2-dev libfreeimage-dev libfreetype6-dev libcurl4-openssl-dev \
   libasound2-dev libgl1-mesa-dev build-essential cmake fonts-droid \
   libvlc-dev libvlccore-dev vlc-nox
+```
+**On Fedora:**
+All of this be easily installed with dnf ( With rpmfusion activated) :
+```bash
+sudo dnf install SDL2-devel freeimage-devel freetype-devel curl-devel \
+  alsa-lib-devel mesa-libGL-devel cmake \
+  vlc-devel
+```
+
+Note this Repository uses a git submodule - to checkout the source and all submodules, use
+
+```bash
+git clone --recursive https://github.com/RetroPie/EmulationStation.git
+```
+
+or 
+
+```bash
+git clone https://github.com/RetroPie/EmulationStation.git
+cd EmulationStation
+git submodule update --init
 ```
 
 Then, generate and build the Makefile with CMake:
@@ -32,10 +52,6 @@ make
 Complete Raspberry Pi build instructions at [emulationstation.org](http://emulationstation.org/gettingstarted.html#install_rpi_standalone).
 
 **On Windows:**
-
-[Boost](http://www.boost.org/users/download/) (you'll need to compile yourself or get the pre-compiled binaries)
-
-[Eigen3](http://eigen.tuxfamily.org/index.php?title=Main_Page) (header-only library)
 
 [FreeImage](http://downloads.sourceforge.net/freeimage/FreeImage3154Win32.zip)
 
@@ -86,9 +102,12 @@ You can use `--help` or `-h` to view a list of command-line options. Briefly out
 --draw-framerate	- draw the framerate.
 --no-exit		- do not display 'exit' in the ES menu.
 --debug			- show the console window on Windows, do slightly more logging
---windowed	- run ES in a window, works best in conjunction with --resolution [w] [h].
+--windowed		- run ES in a window, works best in conjunction with --resolution [w] [h].
 --vsync [1/on or 0/off]	- turn vsync on or off (default is on).
---scrape	- run the interactive command-line metadata scraper.
+--scrape		- run the interactive command-line metadata scraper.
+--no-splash		- don't show the splash screen.
+--max-vram [size]	- Max VRAM to use in Mb before swapping. 0 for unlimited.
+--force-kiosk		- Force the UI mode to be Kiosk.
 ```
 
 As long as ES hasn't frozen, you can always press F4 to close the application.

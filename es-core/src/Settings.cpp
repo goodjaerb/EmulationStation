@@ -1,24 +1,38 @@
 #include "Settings.h"
+
+#include "utils/FileSystemUtil.h"
 #include "Log.h"
-#include "pugixml/src/pugixml.hpp"
 #include "platform.h"
-#include <boost/filesystem.hpp>
-#include <boost/assign.hpp>
+#include <pugixml/src/pugixml.hpp>
+#include <algorithm>
+#include <vector>
 
 Settings* Settings::sInstance = NULL;
 
 // these values are NOT saved to es_settings.xml
 // since they're set through command-line arguments, and not the in-program settings menu
-std::vector<const char*> settings_dont_save = boost::assign::list_of
-	("Debug")
-	("DebugGrid")
-	("DebugText")
-	("ShowExit")
-	("Windowed")
-	("VSync")
-	("HideConsole")
-	("IgnoreGamelist")
-	("SplashScreen");
+std::vector<const char*> settings_dont_save {
+	{ "Debug" },
+	{ "DebugGrid" },
+	{ "DebugText" },
+	{ "DebugImage" },
+	{ "ForceKid" },
+	{ "ForceKiosk" },
+	{ "IgnoreGamelist" },
+	{ "HideConsole" },
+	{ "ShowExit" },
+	{ "SplashScreen" },
+	{ "VSync" },
+	{ "Windowed" },
+	{ "WindowWidth" },
+	{ "WindowHeight" },
+	{ "ScreenWidth" },
+	{ "ScreenHeight" },
+	{ "ScreenOffsetX" },
+	{ "ScreenOffsetY" },
+	{ "ScreenRotate" },
+	{ "ExePath" }
+};
 
 Settings::Settings()
 {
@@ -41,18 +55,14 @@ void Settings::setDefaults()
 
 	mBoolMap["BackgroundJoystickInput"] = false;
 	mBoolMap["ParseGamelistOnly"] = false;
+	mBoolMap["ShowHiddenFiles"] = false;
 	mBoolMap["DrawFramerate"] = false;
 	mBoolMap["ShowExit"] = true;
 	mBoolMap["Windowed"] = false;
 	mBoolMap["SplashScreen"] = true;
+	mStringMap["StartupSystem"] = "";
 
-#ifdef _RPI_
-	// don't enable VSync by default on the Pi, since it already
-	// has trouble trying to render things at 60fps in certain menus
-	mBoolMap["VSync"] = false;
-#else
 	mBoolMap["VSync"] = true;
-#endif
 
 	mBoolMap["EnableSounds"] = true;
 	mBoolMap["ShowHelpPrompts"] = true;
@@ -66,11 +76,16 @@ void Settings::setDefaults()
 	mBoolMap["Debug"] = false;
 	mBoolMap["DebugGrid"] = false;
 	mBoolMap["DebugText"] = false;
+	mBoolMap["DebugImage"] = false;
 
 	mIntMap["ScreenSaverTime"] = 5*60*1000; // 5 minutes
 	mIntMap["ScraperResizeWidth"] = 400;
 	mIntMap["ScraperResizeHeight"] = 0;
-	mIntMap["MaxVRAM"] = 100;
+	#ifdef _RPI_
+		mIntMap["MaxVRAM"] = 80;
+	#else
+		mIntMap["MaxVRAM"] = 100;
+	#endif
 
 	mStringMap["TransitionStyle"] = "fade";
 	mStringMap["ThemeSet"] = "";
@@ -81,6 +96,15 @@ void Settings::setDefaults()
 	mBoolMap["ScreenSaverControls"] = true;
 	mStringMap["ScreenSaverGameInfo"] = "never";
 	mBoolMap["StretchVideoOnScreenSaver"] = false;
+	mStringMap["PowerSaverMode"] = "disabled";
+
+	mIntMap["ScreenSaverSwapImageTimeout"] = 10000;
+	mBoolMap["SlideshowScreenSaverStretch"] = false;
+	mStringMap["SlideshowScreenSaverBackgroundAudioFile"] = Utils::FileSystem::getHomePath() + "/.emulationstation/slideshow/audio/slideshow_bg.wav";
+	mBoolMap["SlideshowScreenSaverCustomImageSource"] = false;
+	mStringMap["SlideshowScreenSaverImageDir"] = Utils::FileSystem::getHomePath() + "/.emulationstation/slideshow/image";
+	mStringMap["SlideshowScreenSaverImageFilter"] = ".png,.jpg";
+	mBoolMap["SlideshowScreenSaverRecurse"] = false;
 
 	// This setting only applies to raspberry pi but set it for all platforms so
 	// we don't get a warning if we encounter it on a different platform
@@ -92,11 +116,16 @@ void Settings::setDefaults()
 		mBoolMap["ScreenSaverOmxPlayer"] = false;
 	#endif
 
+	mIntMap["ScreenSaverSwapVideoTimeout"] = 30000;
+
 	mBoolMap["VideoAudio"] = true;
 	mBoolMap["CaptionsCompatibility"] = true;
 	// Audio out device for Video playback using OMX player.
 	mStringMap["OMXAudioDev"] = "both";
 	mStringMap["CollectionSystemsAuto"] = "";
+	mStringMap["CollectionSystemsCustom"] = "";
+	mBoolMap["SortAllSystems"] = false;
+	mBoolMap["UseCustomCollectionsSystem"] = true;
 
 	// Audio out device for volume control
 	#ifdef _RPI_
@@ -105,15 +134,30 @@ void Settings::setDefaults()
 		mStringMap["AudioDevice"] = "Master";
 	#endif
 
+	mStringMap["UIMode"] = "Full";
+	mStringMap["UIMode_passkey"] = "uuddlrlrba";
+	mBoolMap["ForceKiosk"] = false;
+	mBoolMap["ForceKid"] = false;
+	mBoolMap["hideQuitMenuOnKidUI"] = false;
+
+	mIntMap["WindowWidth"]   = 0;
+	mIntMap["WindowHeight"]  = 0;
+	mIntMap["ScreenWidth"]   = 0;
+	mIntMap["ScreenHeight"]  = 0;
+	mIntMap["ScreenOffsetX"] = 0;
+	mIntMap["ScreenOffsetY"] = 0;
+	mIntMap["ScreenRotate"]  = 0;
+
+	mStringMap["ExePath"] = "";
 }
 
 template <typename K, typename V>
 void saveMap(pugi::xml_document& doc, std::map<K, V>& map, const char* type)
 {
-	for(auto iter = map.begin(); iter != map.end(); iter++)
+	for(auto iter = map.cbegin(); iter != map.cend(); iter++)
 	{
 		// key is on the "don't save" list, so don't save it
-		if(std::find(settings_dont_save.begin(), settings_dont_save.end(), iter->first) != settings_dont_save.end())
+		if(std::find(settings_dont_save.cbegin(), settings_dont_save.cend(), iter->first) != settings_dont_save.cend())
 			continue;
 
 		pugi::xml_node node = doc.append_child(type);
@@ -124,7 +168,8 @@ void saveMap(pugi::xml_document& doc, std::map<K, V>& map, const char* type)
 
 void Settings::saveFile()
 {
-	const std::string path = getHomePath() + "/.emulationstation/es_settings.cfg";
+	LOG(LogDebug) << "Settings::saveFile() : Saving Settings to file.";
+	const std::string path = Utils::FileSystem::getHomePath() + "/.emulationstation/es_settings.cfg";
 
 	pugi::xml_document doc;
 
@@ -133,7 +178,7 @@ void Settings::saveFile()
 	saveMap<std::string, float>(doc, mFloatMap, "float");
 
 	//saveMap<std::string, std::string>(doc, mStringMap, "string");
-	for(auto iter = mStringMap.begin(); iter != mStringMap.end(); iter++)
+	for(auto iter = mStringMap.cbegin(); iter != mStringMap.cend(); iter++)
 	{
 		pugi::xml_node node = doc.append_child("string");
 		node.append_attribute("name").set_value(iter->first.c_str());
@@ -145,9 +190,9 @@ void Settings::saveFile()
 
 void Settings::loadFile()
 {
-	const std::string path = getHomePath() + "/.emulationstation/es_settings.cfg";
+	const std::string path = Utils::FileSystem::getHomePath() + "/.emulationstation/es_settings.cfg";
 
-	if(!boost::filesystem::exists(path))
+	if(!Utils::FileSystem::exists(path))
 		return;
 
 	pugi::xml_document doc;
@@ -171,7 +216,7 @@ void Settings::loadFile()
 //Print a warning message if the setting we're trying to get doesn't already exist in the map, then return the value in the map.
 #define SETTINGS_GETSET(type, mapName, getMethodName, setMethodName) type Settings::getMethodName(const std::string& name) \
 { \
-	if(mapName.find(name) == mapName.end()) \
+	if(mapName.find(name) == mapName.cend()) \
 	{ \
 		LOG(LogError) << "Tried to use unset setting " << name << "!"; \
 	} \

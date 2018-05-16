@@ -1,13 +1,18 @@
 #include "components/VideoVlcComponent.h"
+
+#include "resources/TextureResource.h"
+#include "utils/StringUtil.h"
+#include "PowerSaver.h"
 #include "Renderer.h"
-#include "ThemeData.h"
-#include "Util.h"
 #include "Settings.h"
+#include <vlc/vlc.h>
+#include <SDL_mutex.h>
+
 #ifdef WIN32
 #include <codecvt>
 #endif
 
-libvlc_instance_t*		VideoVlcComponent::mVLC = NULL;
+libvlc_instance_t* VideoVlcComponent::mVLC = NULL;
 
 // VLC prepares to render a video frame.
 static void *lock(void *data, void **p_pixels) {
@@ -19,14 +24,14 @@ static void *lock(void *data, void **p_pixels) {
 }
 
 // VLC just rendered a video frame.
-static void unlock(void *data, void *id, void *const *p_pixels) {
+static void unlock(void *data, void* /*id*/, void *const* /*p_pixels*/) {
 	struct VideoContext *c = (struct VideoContext *)data;
 	SDL_UnlockSurface(c->surface);
 	SDL_UnlockMutex(c->mutex);
 }
 
 // VLC wants to display a video frame.
-static void display(void *data, void *id) {
+static void display(void* /*data*/, void* /*id*/) {
 	//Data to be displayed
 }
 
@@ -50,7 +55,7 @@ VideoVlcComponent::~VideoVlcComponent()
 
 void VideoVlcComponent::setResize(float width, float height)
 {
-	mTargetSize << width, height;
+	mTargetSize = Vector2f(width, height);
 	mTargetIsMax = false;
 	mStaticImage.setResize(width, height);
 	resize();
@@ -58,7 +63,7 @@ void VideoVlcComponent::setResize(float width, float height)
 
 void VideoVlcComponent::setMaxSize(float width, float height)
 {
-	mTargetSize << width, height;
+	mTargetSize = Vector2f(width, height);
 	mTargetIsMax = true;
 	mStaticImage.setMaxSize(width, height);
 	resize();
@@ -69,9 +74,9 @@ void VideoVlcComponent::resize()
 	if(!mTexture)
 		return;
 
-	const Eigen::Vector2f textureSize(mVideoWidth, mVideoHeight);
+	const Vector2f textureSize((float)mVideoWidth, (float)mVideoHeight);
 
-	if(textureSize.isZero())
+	if(textureSize == Vector2f::Zero())
 		return;
 
 		// SVG rasterization is determined by height (see SVGResource.cpp), and rasterization is done in terms of pixels
@@ -85,7 +90,7 @@ void VideoVlcComponent::resize()
 
 			mSize = textureSize;
 
-			Eigen::Vector2f resizeScale((mTargetSize.x() / mSize.x()), (mTargetSize.y() / mSize.y()));
+			Vector2f resizeScale((mTargetSize.x() / mSize.x()), (mTargetSize.y() / mSize.y()));
 
 			if(resizeScale.x() < resizeScale.y())
 			{
@@ -97,39 +102,39 @@ void VideoVlcComponent::resize()
 			}
 
 			// for SVG rasterization, always calculate width from rounded height (see comment above)
-			mSize[1] = round(mSize[1]);
+			mSize[1] = Math::round(mSize[1]);
 			mSize[0] = (mSize[1] / textureSize.y()) * textureSize.x();
 
 		}else{
 			// if both components are set, we just stretch
 			// if no components are set, we don't resize at all
-			mSize = mTargetSize.isZero() ? textureSize : mTargetSize;
+			mSize = mTargetSize == Vector2f::Zero() ? textureSize : mTargetSize;
 
 			// if only one component is set, we resize in a way that maintains aspect ratio
 			// for SVG rasterization, we always calculate width from rounded height (see comment above)
 			if(!mTargetSize.x() && mTargetSize.y())
 			{
-				mSize[1] = round(mTargetSize.y());
+				mSize[1] = Math::round(mTargetSize.y());
 				mSize[0] = (mSize.y() / textureSize.y()) * textureSize.x();
 			}else if(mTargetSize.x() && !mTargetSize.y())
 			{
-				mSize[1] = round((mTargetSize.x() / textureSize.x()) * textureSize.y());
+				mSize[1] = Math::round((mTargetSize.x() / textureSize.x()) * textureSize.y());
 				mSize[0] = (mSize.y() / textureSize.y()) * textureSize.x();
 			}
 		}
 
 	// mSize.y() should already be rounded
-	mTexture->rasterizeAt((int)round(mSize.x()), (int)round(mSize.y()));
+	mTexture->rasterizeAt((size_t)Math::round(mSize.x()), (size_t)Math::round(mSize.y()));
 
 	onSizeChanged();
 }
 
-void VideoVlcComponent::render(const Eigen::Affine3f& parentTrans)
+void VideoVlcComponent::render(const Transform4x4f& parentTrans)
 {
 	VideoComponent::render(parentTrans);
 	float x, y;
 
-	Eigen::Affine3f trans = parentTrans * getTransform();
+	Transform4x4f trans = parentTrans * getTransform();
 	GuiComponent::renderChildren(trans);
 
 	Renderer::setMatrix(trans);
@@ -141,17 +146,17 @@ void VideoVlcComponent::render(const Eigen::Affine3f& parentTrans)
 		float x2;
 		float y2;
 
-		x = -(float)mSize.x() * mOrigin.x();
-		y = -(float)mSize.y() * mOrigin.y();
-		x2 = x+mSize.x();
-		y2 = y+mSize.y();
+		x = 0.0;
+		y = 0.0;
+		x2 = mSize.x();
+		y2 = mSize.y();
 
 		// Define a structure to contain the data for each vertex
 		struct Vertex
 		{
-			Eigen::Vector2f pos;
-			Eigen::Vector2f tex;
-			Eigen::Vector4f colour;
+			Vector2f pos;
+			Vector2f tex;
+			Vector4f colour;
 		} vertices[6];
 
 		// We need two triangles to cover the rectangular area
@@ -260,6 +265,10 @@ void VideoVlcComponent::handleLooping()
 		libvlc_state_t state = libvlc_media_player_get_state(mMediaPlayer);
 		if (state == libvlc_Ended)
 		{
+			if (!Settings::getInstance()->getBool("VideoAudio"))
+			{
+				libvlc_audio_set_mute(mMediaPlayer, 1);
+			}
 			//libvlc_media_player_set_position(mMediaPlayer, 0.0f);
 			libvlc_media_player_set_media(mMediaPlayer, mMedia);
 			libvlc_media_player_play(mMediaPlayer);
@@ -274,10 +283,9 @@ void VideoVlcComponent::startVideo()
 		mVideoHeight = 0;
 
 #ifdef WIN32
-		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> wton;
-		std::string path = wton.to_bytes(mVideoPath.c_str());
+		std::string path(Utils::String::replace(mVideoPath, "/", "\\"));
 #else
-		std::string path(mVideoPath.c_str());
+		std::string path(mVideoPath);
 #endif
 		// Make sure we have a video path
 		if (mVLC && (path.size() > 0))
@@ -289,7 +297,7 @@ void VideoVlcComponent::startVideo()
 			mMedia = libvlc_media_new_path(mVLC, path.c_str());
 			if (mMedia)
 			{
-				unsigned 	track_count;
+				unsigned track_count;
 				// Get the media metadata so we can find the aspect ratio
 				libvlc_media_parse(mMedia);
 				libvlc_media_track_t** tracks;
@@ -313,21 +321,20 @@ void VideoVlcComponent::startVideo()
 					{
 						if(!Settings::getInstance()->getBool("CaptionsCompatibility")) {
 
-							Eigen::Vector2f resizeScale((Renderer::getScreenWidth() / mVideoWidth), (Renderer::getScreenHeight() / mVideoHeight));
+							Vector2f resizeScale((Renderer::getScreenWidth() / (float)mVideoWidth), (Renderer::getScreenHeight() / (float)mVideoHeight));
 
 							if(resizeScale.x() < resizeScale.y())
 							{
-								mVideoWidth *= resizeScale.x();
-								mVideoHeight *= resizeScale.x();
+								mVideoWidth = (unsigned int) (mVideoWidth * resizeScale.x());
+								mVideoHeight = (unsigned int) (mVideoHeight * resizeScale.x());
 							}else{
-								mVideoWidth *= resizeScale.y();
-								mVideoHeight *= resizeScale.y();
+								mVideoWidth = (unsigned int) (mVideoWidth * resizeScale.y());
+								mVideoHeight = (unsigned int) (mVideoHeight * resizeScale.y());
 							}
-							mVideoHeight = round(mVideoHeight);
-							mVideoWidth = round(mVideoWidth);
 						}
 					}
 #endif
+					PowerSaver::pause();
 					setupContext();
 
 					// Setup the media player
@@ -363,6 +370,6 @@ void VideoVlcComponent::stopVideo()
 		libvlc_media_release(mMedia);
 		mMediaPlayer = NULL;
 		freeContext();
+		PowerSaver::resume();
 	}
 }
-

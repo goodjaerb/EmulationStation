@@ -1,11 +1,11 @@
 #include "views/gamelist/ISimpleGameListView.h"
-#include "ThemeData.h"
-#include "Window.h"
+
+#include "views/UIModeController.h"
 #include "views/ViewController.h"
-#include "Sound.h"
-#include "Log.h"
-#include "Settings.h"
 #include "CollectionSystemManager.h"
+#include "Settings.h"
+#include "Sound.h"
+#include "SystemData.h"
 
 ISimpleGameListView::ISimpleGameListView(Window* window, FileData* root) : IGameListView(window, root),
 	mHeaderText(window), mHeaderImage(window), mBackground(window)
@@ -13,7 +13,7 @@ ISimpleGameListView::ISimpleGameListView(Window* window, FileData* root) : IGame
 	mHeaderText.setText("Logo Text");
 	mHeaderText.setSize(mSize.x(), 0);
 	mHeaderText.setPosition(0, 0);
-	mHeaderText.setAlignment(ALIGN_CENTER);
+	mHeaderText.setHorizontalAlignment(ALIGN_CENTER);
 	mHeaderText.setDefaultZIndex(50);
 	
 	mHeaderImage.setResize(0, mSize.y() * 0.185f);
@@ -60,7 +60,7 @@ void ISimpleGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& theme
 	}
 }
 
-void ISimpleGameListView::onFileChanged(FileData* file, FileChangeType change)
+void ISimpleGameListView::onFileChanged(FileData* /*file*/, FileChangeType /*change*/)
 {
 	// we could be tricky here to be efficient;
 	// but this shouldn't happen very often so we'll just always repopulate
@@ -93,6 +93,8 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 				{
 					mCursorStack.push(cursor);
 					populateList(cursor->getChildrenListToDisplay());
+					FileData* cursor = getCursor();
+					setCursor(cursor);
 				}
 			}
 
@@ -107,11 +109,16 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 				Sound::getFromTheme(getTheme(), getName(), "back")->play();
 			}else{
 				onFocusLost();
-				ViewController::get()->goToSystemView(getCursor()->getSystem());
+				SystemData* systemToView = getCursor()->getSystem();
+				if (systemToView->isCollection())
+				{
+					systemToView = CollectionSystemManager::get()->getSystemToView(systemToView);
+				}
+				ViewController::get()->goToSystemView(systemToView);
 			}
 
 			return true;
-		}else if(config->isMappedTo("right", input))
+		}else if(config->isMappedTo(getQuickSystemSelectRightButton(), input))
 		{
 			if(Settings::getInstance()->getBool("QuickSystemSelect"))
 			{
@@ -119,7 +126,7 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 				ViewController::get()->goToNextGameList();
 				return true;
 			}
-		}else if(config->isMappedTo("left", input))
+		}else if(config->isMappedTo(getQuickSystemSelectLeftButton(), input))
 		{
 			if(Settings::getInstance()->getBool("QuickSystemSelect"))
 			{
@@ -129,15 +136,21 @@ bool ISimpleGameListView::input(InputConfig* config, Input input)
 			}
 		}else if (config->isMappedTo("x", input))
 		{
-			// go to random system game
-			setCursor(mRoot->getSystem()->getRandomGame());
-			//ViewController::get()->goToRandomGame();
-			return true;
-		}else if (config->isMappedTo("y", input))
-		{
-			if(Settings::getInstance()->getString("CollectionSystemsAuto").find("favorites") != std::string::npos && mRoot->getSystem()->isGameSystem())
+			if (mRoot->getSystem()->isGameSystem())
 			{
-				if(CollectionSystemManager::get()->toggleGameInCollection(getCursor(), "favorites"))
+				// go to random system game
+				FileData* randomGame = getCursor()->getSystem()->getRandomGame();
+				if (randomGame)
+				{
+					setCursor(randomGame);
+				}
+				return true;
+			}
+		}else if (config->isMappedTo("y", input) && !(UIModeController::getInstance()->isUIModeKid()))
+		{
+			if(mRoot->getSystem()->isGameSystem())
+			{
+				if(CollectionSystemManager::get()->toggleGameInCollection(getCursor()))
 				{
 					return true;
 				}

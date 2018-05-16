@@ -1,12 +1,13 @@
 #pragma once
+#ifndef ES_APP_FILE_DATA_H
+#define ES_APP_FILE_DATA_H
 
-#include <unordered_map>
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
+#include "utils/FileSystemUtil.h"
 #include "MetaData.h"
+#include <unordered_map>
 
 class SystemData;
+class Window;
 struct SystemEnvironmentData;
 
 enum FileType
@@ -32,20 +33,22 @@ FileType stringToFileType(const char* str);
 class FileData
 {
 public:
-	FileData(FileType type, const boost::filesystem::path& path, SystemEnvironmentData* envData, SystemData* system);
+	FileData(FileType type, const std::string& path, SystemEnvironmentData* envData, SystemData* system);
 	virtual ~FileData();
 
 	virtual const std::string& getName();
+	virtual const std::string& getSortName();
 	inline FileType getType() const { return mType; }
-	inline const boost::filesystem::path& getPath() const { return mPath; }
+	inline const std::string& getPath() const { return mPath; }
 	inline FileData* getParent() const { return mParent; }
 	inline const std::unordered_map<std::string, FileData*>& getChildrenByFilename() const { return mChildrenByFilename; }
 	inline const std::vector<FileData*>& getChildren() const { return mChildren; }
 	inline SystemData* getSystem() const { return mSystem; }
 	inline SystemEnvironmentData* getSystemEnvData() const { return mEnvData; }
-	virtual const std::string& getThumbnailPath() const;
-	virtual const std::string& getVideoPath() const;
-	virtual const std::string& getMarqueePath() const;
+	virtual const std::string getThumbnailPath() const;
+	virtual const std::string getVideoPath() const;
+	virtual const std::string getMarqueePath() const;
+	virtual const std::string getImagePath() const;
 
 	const std::vector<FileData*>& getChildrenListToDisplay();
 	std::vector<FileData*> getFilesRecursive(unsigned int typeMask, bool displayedOnly = false) const;
@@ -58,8 +61,8 @@ public:
 	virtual inline void refreshMetadata() { return; };
 
 	virtual std::string getKey();
-	inline std::string getFullPath() { return getPath().string(); };
-	inline std::string getFileName() { return getPath().filename().string(); };
+	inline std::string getFullPath() { return getPath(); };
+	inline std::string getFileName() { return Utils::FileSystem::getFileName(getPath()); };
 	virtual FileData* getSourceFileData();
 	inline std::string getSystemName() const { return mSystemName; };
 
@@ -93,7 +96,7 @@ protected:
 
 private:
 	FileType mType;
-	boost::filesystem::path mPath;
+	std::string mPath;
 	SystemEnvironmentData* mEnvData;
 	SystemData* mSystem;
 	std::unordered_map<std::string,FileData*> mChildrenByFilename;
@@ -115,3 +118,7 @@ private:
 	std::string mCollectionFileName;
 	bool mDirty;
 };
+
+FileData::SortType getSortTypeFromString(std::string desc);
+
+#endif // ES_APP_FILE_DATA_H

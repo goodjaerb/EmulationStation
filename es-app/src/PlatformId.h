@@ -1,6 +1,6 @@
 #pragma once
-
-#include <map>
+#ifndef ES_APP_PLATFORM_ID_H
+#define ES_APP_PLATFORM_ID_H
 
 namespace PlatformIds
 {
@@ -77,6 +77,6 @@ namespace PlatformIds
 
 	PlatformId getPlatformId(const char* str);
 	const char* getPlatformName(PlatformId id);
-
-	const char* getCleanMameName(const char* from);
 }
+
+#endif // ES_APP_PLATFORM_ID_H

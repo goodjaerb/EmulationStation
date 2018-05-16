@@ -1,7 +1,8 @@
-#include <iostream>
 #include "HttpReq.h"
+
+#include "utils/FileSystemUtil.h"
 #include "Log.h"
-#include <boost/filesystem.hpp>
+#include <assert.h>
 
 CURLM* HttpReq::s_multi_handle = curl_multi_init();
 
@@ -32,7 +33,7 @@ std::string HttpReq::urlEncode(const std::string &s)
 bool HttpReq::isUrl(const std::string& str)
 {
 	//the worst guess
-	return (!str.empty() && !boost::filesystem::exists(str) && 
+	return (!str.empty() && !Utils::FileSystem::exists(str) && 
 		(str.find("http://") != std::string::npos || str.find("https://") != std::string::npos || str.find("www.") != std::string::npos));
 }
 
@@ -117,7 +118,7 @@ HttpReq::Status HttpReq::status()
 
 		int msgs_left;
 		CURLMsg* msg;
-		while(msg = curl_multi_info_read(s_multi_handle, &msgs_left))
+		while((msg = curl_multi_info_read(s_multi_handle, &msgs_left)) != nullptr)
 		{
 			if(msg->msg == CURLMSG_DONE)
 			{

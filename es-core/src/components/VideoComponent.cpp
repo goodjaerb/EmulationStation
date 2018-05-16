@@ -1,11 +1,12 @@
 #include "components/VideoComponent.h"
+
+#include "resources/ResourceManager.h"
+#include "utils/FileSystemUtil.h"
+#include "PowerSaver.h"
 #include "Renderer.h"
 #include "ThemeData.h"
-#include "Util.h"
 #include "Window.h"
-#ifdef WIN32
-#include <codecvt>
-#endif
+#include <SDL_timer.h>
 
 #define FADE_TIME_MS	200
 
@@ -15,15 +16,16 @@ std::string getTitlePath() {
 }
 
 std::string getTitleFolder() {
-	std::string home = getHomePath();
+	std::string home = Utils::FileSystem::getHomePath();
 	return home + "/.emulationstation/tmp/";
 }
 
 void writeSubtitle(const char* gameName, const char* systemName, bool always)
 {
 	FILE* file = fopen(getTitlePath().c_str(), "w");
+	int end = (int)(Settings::getInstance()->getInt("ScreenSaverSwapVideoTimeout") / (1000));
 	if (always) {
-		fprintf(file, "1\n00:00:01,000 --> 00:00:30,000\n");
+		fprintf(file, "1\n00:00:01,000 --> 00:00:%d,000\n", end);
 	}
 	else
 	{
@@ -33,9 +35,10 @@ void writeSubtitle(const char* gameName, const char* systemName, bool always)
 	fprintf(file, "<i>%s</i>\n\n", systemName);
 
 	if (!always) {
-		fprintf(file, "2\n00:00:26,000 --> 00:00:30,000\n");
-		fprintf(file, "%s\n", gameName);
-		fprintf(file, "<i>%s</i>\n", systemName);
+		if (end > 12)
+		{
+			fprintf(file, "2\n00:00:%d,000 --> 00:00:%d,000\n%s\n<i>%s</i>\n", end-4, end, gameName, systemName);
+		}
 	}
 
 	fflush(file);
@@ -60,7 +63,6 @@ VideoComponent::VideoComponent(Window* window) :
 	mDisable(false),
 	mScreensaverMode(false),
 	mTargetIsMax(false),
-	mOrigin(0, 0),
 	mTargetSize(0, 0)
 {
 	// Setup the default configuration
@@ -72,8 +74,8 @@ VideoComponent::VideoComponent(Window* window) :
 	}
 
 	std::string path = getTitleFolder();
-	if(!boost::filesystem::exists(path))
-		boost::filesystem::create_directory(path);
+	if(!Utils::FileSystem::exists(path))
+		Utils::FileSystem::createDirectory(path);
 }
 
 VideoComponent::~VideoComponent()
@@ -84,18 +86,10 @@ VideoComponent::~VideoComponent()
 	remove(getTitlePath().c_str());
 }
 
-void VideoComponent::setOrigin(float originX, float originY)
+void VideoComponent::onOriginChanged()
 {
-	mOrigin << originX, originY;
-
 	// Update the embeded static image
-	mStaticImage.setOrigin(originX, originY);
-}
-
-Eigen::Vector2f VideoComponent::getCenter() const
-{
-	return Eigen::Vector2f(mPosition.x() - (getSize().x() * mOrigin.x()) + getSize().x() / 2,
-		mPosition.y() - (getSize().y() * mOrigin.y()) + getSize().y() / 2);
+	mStaticImage.setOrigin(mOrigin);
 }
 
 void VideoComponent::onSizeChanged()
@@ -107,8 +101,7 @@ void VideoComponent::onSizeChanged()
 bool VideoComponent::setVideo(std::string path)
 {
 	// Convert the path into a generic format
-	boost::filesystem::path fullPath = getCanonicalPath(path);
-	fullPath.make_preferred().native();
+	std::string fullPath = Utils::FileSystem::getCanonicalPath(path);
 
 	// Check that it's changed
 	if (fullPath == mVideoPath)
@@ -118,7 +111,7 @@ bool VideoComponent::setVideo(std::string path)
 	mVideoPath = fullPath;
 
 	// If the file exists then set the new video
-	if (!fullPath.empty() && ResourceManager::getInstance()->fileExists(fullPath.generic_string()))
+	if (!fullPath.empty() && ResourceManager::getInstance()->fileExists(fullPath))
 	{
 		// Return true to show that we are going to attempt to play a video
 		return true;
@@ -150,11 +143,9 @@ void VideoComponent::setOpacity(unsigned char opacity)
 	mStaticImage.setOpacity(opacity);
 }
 
-void VideoComponent::render(const Eigen::Affine3f& parentTrans)
+void VideoComponent::render(const Transform4x4f& parentTrans)
 {
-	float x, y;
-
-	Eigen::Affine3f trans = parentTrans * getTransform();
+	Transform4x4f trans = parentTrans * getTransform();
 	GuiComponent::renderChildren(trans);
 
 	Renderer::setMatrix(trans);
@@ -166,7 +157,7 @@ void VideoComponent::render(const Eigen::Affine3f& parentTrans)
 	handleLooping();
 }
 
-void VideoComponent::renderSnapshot(const Eigen::Affine3f& parentTrans)
+void VideoComponent::renderSnapshot(const Transform4x4f& parentTrans)
 {
 	// This is the case where the video is not currently being displayed. Work out
 	// if we need to display a static image
@@ -188,26 +179,26 @@ void VideoComponent::applyTheme(const std::shared_ptr<ThemeData>& theme, const s
 		return;
 	}
 
-	Eigen::Vector2f scale = getParent() ? getParent()->getSize() : Eigen::Vector2f((float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight());
+	Vector2f scale = getParent() ? getParent()->getSize() : Vector2f((float)Renderer::getScreenWidth(), (float)Renderer::getScreenHeight());
 
 	if ((properties & POSITION) && elem->has("pos"))
 	{
-		Eigen::Vector2f denormalized = elem->get<Eigen::Vector2f>("pos").cwiseProduct(scale);
-		setPosition(Eigen::Vector3f(denormalized.x(), denormalized.y(), 0));
-		mStaticImage.setPosition(Eigen::Vector3f(denormalized.x(), denormalized.y(), 0));
+		Vector2f denormalized = elem->get<Vector2f>("pos") * scale;
+		setPosition(Vector3f(denormalized.x(), denormalized.y(), 0));
+		mStaticImage.setPosition(Vector3f(denormalized.x(), denormalized.y(), 0));
 	}
 
 	if(properties & ThemeFlags::SIZE)
 	{
 		if(elem->has("size"))
-			setResize(elem->get<Eigen::Vector2f>("size").cwiseProduct(scale));
+			setResize(elem->get<Vector2f>("size") * scale);
 		else if(elem->has("maxSize"))
-			setMaxSize(elem->get<Eigen::Vector2f>("maxSize").cwiseProduct(scale));
+			setMaxSize(elem->get<Vector2f>("maxSize") * scale);
 	}
 
 	// position + size also implies origin
 	if (((properties & ORIGIN) || ((properties & POSITION) && (properties & ThemeFlags::SIZE))) && elem->has("origin"))
-		setOrigin(elem->get<Eigen::Vector2f>("origin"));
+		setOrigin(elem->get<Vector2f>("origin"));
 
 	if(elem->has("default"))
 		mConfig.defaultVideoPath = elem->get<std::string>("default");
@@ -220,6 +211,13 @@ void VideoComponent::applyTheme(const std::shared_ptr<ThemeData>& theme, const s
 
 	if (elem->has("showSnapshotDelay"))
 		mConfig.showSnapshotDelay = elem->get<bool>("showSnapshotDelay");
+
+	if(properties & ThemeFlags::ROTATION) {
+		if(elem->has("rotation"))
+			setRotationDegrees(elem->get<float>("rotation"));
+		if(elem->has("rotationOrigin"))
+			setRotationOrigin(elem->get<Vector2f>("rotationOrigin"));
+	}
 
 	if(properties & ThemeFlags::Z_INDEX && elem->has("zIndex"))
 		setZIndex(elem->get<float>("zIndex"));
@@ -264,7 +262,7 @@ void VideoComponent::startVideoWithDelay()
 		// Set the video that we are going to be playing so we don't attempt to restart it
 		mPlayingVideoPath = mVideoPath;
 
-		if (mConfig.startDelay == 0)
+		if (mConfig.startDelay == 0 || PowerSaver::getMode() == PowerSaver::INSTANT)
 		{
 			// No delay. Just start the video
 			mStartDelayed = false;
