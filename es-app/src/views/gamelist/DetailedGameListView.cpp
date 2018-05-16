@@ -109,9 +109,9 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	using namespace ThemeFlags;
 	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
 	mName.applyTheme(theme, getName(), "md_name", ALL);
-	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX);
-	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX);
-	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX);
+	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
+	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
+	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
@@ -283,12 +283,6 @@ void DetailedGameListView::launch(FileData* game)
 	Vector3f target(Renderer::getScreenWidth() / 2.0f, Renderer::getScreenHeight() / 2.0f, 0);
 	if(mImage.hasImage())
 		target = Vector3f(mImage.getCenter().x(), mImage.getCenter().y(), 0);
-	if(mScreenshot.hasImage())
-		target = Vector3f(mScreenshot.getCenter().x(), mScreenshot.getCenter().y(), 0);
-	if(mScreenshot2.hasImage())
-		target = Vector3f(mScreenshot2.getCenter().x(), mScreenshot2.getCenter().y(), 0);
-	if(mBgImage.hasImage())
-		target = Vector3f(mBgImage.getCenter().x(), mBgImage.getCenter().y(), 0);
 
 	ViewController::get()->launch(game, target);
 }
