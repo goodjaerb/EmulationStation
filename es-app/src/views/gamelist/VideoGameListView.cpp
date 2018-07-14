@@ -15,15 +15,15 @@ VideoGameListView::VideoGameListView(Window* window, FileData* root) :
 	BasicGameListView(window, root),
 	mDescContainer(window), mDescription(window),
 	mMarquee(window),
-	mImage(window),
+	mImage(window), mBgImage(window), mScreenshot(window), mScreenshot2(window),
 	mVideo(nullptr),
 	mVideoPlaying(false),
 
 	mLblRating(window), mLblReleaseDate(window), mLblDeveloper(window), mLblPublisher(window),
-	mLblGenre(window), mLblPlayers(window), mLblLastPlayed(window), mLblPlayCount(window),
+	mLblGenre(window), mLblPlayers(window), mLblFilename(window), mLblLastPlayed(window), mLblPlayCount(window),
 
 	mRating(window), mReleaseDate(window), mDeveloper(window), mPublisher(window),
-	mGenre(window), mPlayers(window), mLastPlayed(window), mPlayCount(window),
+	mGenre(window), mPlayers(window), mFilename(window), mLastPlayed(window), mPlayCount(window),
 	mName(window)
 {
 	const float padding = 0.01f;
@@ -58,6 +58,26 @@ VideoGameListView::VideoGameListView(Window* window, FileData* root) :
 	mImage.setDefaultZIndex(30);
 	addChild(&mImage);
 
+	mScreenshot.setOrigin(0.5f, 0.5f);
+	// Default to off the screen
+	mScreenshot.setPosition(2.0f, 2.0f);
+	mScreenshot.setMaxSize(1.0f, 1.0f);
+	mScreenshot.setDefaultZIndex(30);
+	addChild(&mScreenshot);
+
+	mScreenshot2.setOrigin(0.5f, 0.5f);
+	// Default to off the screen
+	mScreenshot2.setPosition(2.0f, 2.0f);
+	mScreenshot2.setMaxSize(1.0f, 1.0f);
+	mScreenshot2.setDefaultZIndex(30);
+	addChild(&mScreenshot2);
+
+	mBgImage.setOrigin(0.5f, 0.5f);
+	// Default to off the screen
+	mBgImage.setPosition(2.0f, 2.0f);
+	mBgImage.setDefaultZIndex(5);
+	addChild(&mBgImage);
+
 	// video
 	mVideo->setOrigin(0.5f, 0.5f);
 	mVideo->setPosition(mSize.x() * 0.25f, mSize.y() * 0.4f);
@@ -84,6 +104,9 @@ VideoGameListView::VideoGameListView(Window* window, FileData* root) :
 	mLblPlayers.setText("Players: ");
 	addChild(&mLblPlayers);
 	addChild(&mPlayers);
+	mLblFilename.setText("Filename: ");
+	addChild(&mLblFilename);
+	addChild(&mFilename);
 	mLblLastPlayed.setText("Last played: ");
 	addChild(&mLblLastPlayed);
 	mLastPlayed.setDisplayMode(DateTimeComponent::DISP_RELATIVE_TO_NOW);
@@ -127,13 +150,16 @@ void VideoGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& theme)
 	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
 	mVideo->applyTheme(theme, getName(), "md_video", POSITION | ThemeFlags::SIZE | ThemeFlags::DELAY | Z_INDEX | ROTATION);
 	mName.applyTheme(theme, getName(), "md_name", ALL);
+	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
+	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
+	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
-	assert(labels.size() == 8);
-	const char* lblElements[8] = {
+	assert(labels.size() == 9);
+	const char* lblElements[9] = {
 		"md_lbl_rating", "md_lbl_releasedate", "md_lbl_developer", "md_lbl_publisher",
-		"md_lbl_genre", "md_lbl_players", "md_lbl_lastplayed", "md_lbl_playcount"
+		"md_lbl_genre", "md_lbl_players", "md_lbl_filename", "md_lbl_lastplayed", "md_lbl_playcount"
 	};
 
 	for(unsigned int i = 0; i < labels.size(); i++)
@@ -144,10 +170,10 @@ void VideoGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& theme)
 
 	initMDValues();
 	std::vector<GuiComponent*> values = getMDValues();
-	assert(values.size() == 8);
-	const char* valElements[8] = {
+	assert(values.size() == 9);
+	const char* valElements[9] = {
 		"md_rating", "md_releasedate", "md_developer", "md_publisher",
-		"md_genre", "md_players", "md_lastplayed", "md_playcount"
+		"md_genre", "md_players", "md_filename", "md_lastplayed", "md_playcount"
 	};
 
 	for(unsigned int i = 0; i < values.size(); i++)
@@ -205,6 +231,7 @@ void VideoGameListView::initMDValues()
 	mPublisher.setFont(defaultFont);
 	mGenre.setFont(defaultFont);
 	mPlayers.setFont(defaultFont);
+	mFilename.setFont(defaultFont);
 	mLastPlayed.setFont(defaultFont);
 	mPlayCount.setFont(defaultFont);
 
@@ -255,6 +282,9 @@ void VideoGameListView::updateInfoPanel()
 		mVideo->setImage(file->getThumbnailPath());
 		mMarquee.setImage(file->getMarqueePath());
 		mImage.setImage(file->getImagePath());
+		mScreenshot.setImage(file->metadata.get("screenshot"));
+		mScreenshot2.setImage(file->metadata.get("screenshot2"));
+		mBgImage.setImage(file->metadata.get("bgImage"));
 
 		mDescription.setText(file->metadata.get("desc"));
 		mDescContainer.reset();
@@ -269,6 +299,7 @@ void VideoGameListView::updateInfoPanel()
 
 		if(file->getType() == GAME)
 		{
+			mFilename.setValue(file->metadata.get("filename"));
 			mLastPlayed.setValue(file->metadata.get("lastplayed"));
 			mPlayCount.setValue(file->metadata.get("playcount"));
 		}
@@ -281,6 +312,9 @@ void VideoGameListView::updateInfoPanel()
 	comps.push_back(mVideo);
 	comps.push_back(&mDescription);
 	comps.push_back(&mImage);
+	comps.push_back(&mScreenshot);
+	comps.push_back(&mScreenshot2);
+	comps.push_back(&mBgImage);
 	comps.push_back(&mName);
 	std::vector<TextComponent*> labels = getMDLabels();
 	comps.insert(comps.cend(), labels.cbegin(), labels.cend());
@@ -347,6 +381,7 @@ std::vector<TextComponent*> VideoGameListView::getMDLabels()
 	ret.push_back(&mLblPublisher);
 	ret.push_back(&mLblGenre);
 	ret.push_back(&mLblPlayers);
+	ret.push_back(&mLblFilename);
 	ret.push_back(&mLblLastPlayed);
 	ret.push_back(&mLblPlayCount);
 	return ret;
@@ -361,6 +396,7 @@ std::vector<GuiComponent*> VideoGameListView::getMDValues()
 	ret.push_back(&mPublisher);
 	ret.push_back(&mGenre);
 	ret.push_back(&mPlayers);
+	ret.push_back(&mFilename);
 	ret.push_back(&mLastPlayed);
 	ret.push_back(&mPlayCount);
 	return ret;
