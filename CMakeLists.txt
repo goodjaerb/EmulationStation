@@ -25,6 +25,12 @@ elseif(EXISTS "/opt/vc/include/bcm_host.h")
     set(BCMHOST found)
     set(GLSystem "OpenGL ES" CACHE STRING "The OpenGL system to be used")
 #-------------------------------------------------------------------------------
+#check if we're running on OSMC Vero4K
+elseif(EXISTS "/opt/vero3/lib/libMali.so")
+    MESSAGE("libMali.so found")
+    set(VERO4K found)
+    set(GLSystem "OpenGL ES" CACHE STRING "The OpenGL system to be used")
+#-------------------------------------------------------------------------------
 #check if we're running on olinuxino / odroid / etc
 elseif(EXISTS "/usr/lib/libMali.so" OR
     EXISTS "/usr/lib/arm-linux-gnueabihf/libMali.so" OR
@@ -51,6 +57,7 @@ find_package(FreeImage REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(CURL REQUIRED)
 find_package(VLC REQUIRED)
+find_package(RapidJSON REQUIRED)
 find_package(libCEC)
 
 #add ALSA for Linux
@@ -62,6 +69,10 @@ endif()
 #set up compiler flags and excutable names
 if(DEFINED BCMHOST)
     add_definitions(-D_RPI_)
+endif()
+
+if(DEFINED VERO4K)
+    add_definitions(-D_VERO4K_)
 endif()
 
 if(DEFINED libCEC_FOUND)
@@ -110,6 +121,7 @@ set(COMMON_INCLUDE_DIRS
     ${SDL2_INCLUDE_DIR}
     ${CURL_INCLUDE_DIR}
     ${VLC_INCLUDE_DIR}
+    ${RAPIDJSON_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/es-core/src
 )
@@ -135,6 +147,11 @@ if(DEFINED BCMHOST)
         "/opt/vc/include/interface/vmcs_host/linux"
         "/opt/vc/include/interface/vcos/pthreads"
     )
+#add include directory for Vero4K
+elseif(DEFINED VERO4K)
+    LIST(APPEND COMMON_INCLUDE_DIRS
+        "/opt/vero3/include"
+    )
 else()
     if(${GLSystem} MATCHES "Desktop OpenGL")
         LIST(APPEND COMMON_INCLUDE_DIRS
@@ -152,6 +169,10 @@ endif()
 if(DEFINED BCMHOST)
     link_directories(
         "/opt/vc/lib"
+    )
+elseif(DEFINED VERO4K)
+    link_directories(
+        "/opt/vero3/lib"
     )
 endif()
 
@@ -189,6 +210,11 @@ if(DEFINED BCMHOST)
     LIST(APPEND COMMON_LIBRARIES
         bcm_host
         brcmEGL
+        ${OPENGLES_LIBRARIES}
+    )
+elseif(DEFINED VERO4K)
+    LIST(APPEND COMMON_LIBRARIES
+        EGL
         ${OPENGLES_LIBRARIES}
     )
 else()

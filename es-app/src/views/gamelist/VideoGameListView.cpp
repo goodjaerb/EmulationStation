@@ -109,7 +109,7 @@ VideoGameListView::VideoGameListView(Window* window, FileData* root) :
 	addChild(&mFilename);
 	mLblLastPlayed.setText("Last played: ");
 	addChild(&mLblLastPlayed);
-	mLastPlayed.setDisplayMode(DateTimeComponent::DISP_RELATIVE_TO_NOW);
+	mLastPlayed.setDisplayRelative(true);
 	addChild(&mLastPlayed);
 	mLblPlayCount.setText("Times played: ");
 	addChild(&mLblPlayCount);
