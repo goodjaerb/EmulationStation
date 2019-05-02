@@ -2,6 +2,7 @@
 
 #include "utils/FileSystemUtil.h"
 #include "Log.h"
+#include "Scripting.h"
 #include "platform.h"
 #include <pugixml/src/pugixml.hpp>
 #include <algorithm>
@@ -24,6 +25,7 @@ std::vector<const char*> settings_dont_save {
 	{ "SplashScreen" },
 	{ "SplashScreenProgress" },
 	{ "VSync" },
+	{ "FullscreenBorderless" },
 	{ "Windowed" },
 	{ "WindowWidth" },
 	{ "WindowHeight" },
@@ -59,6 +61,7 @@ void Settings::setDefaults()
 	mBoolMap["ShowHiddenFiles"] = false;
 	mBoolMap["DrawFramerate"] = false;
 	mBoolMap["ShowExit"] = true;
+	mBoolMap["FullscreenBorderless"] = false;
 	mBoolMap["Windowed"] = false;
 	mBoolMap["SplashScreen"] = true;
 	mBoolMap["SplashScreenProgress"] = true;
@@ -191,6 +194,9 @@ void Settings::saveFile()
 	}
 
 	doc.save_file(path.c_str());
+
+	Scripting::fireEvent("config-changed");
+	Scripting::fireEvent("settings-changed");
 }
 
 void Settings::loadFile()

@@ -199,7 +199,7 @@ std::string getBoxartImage(const Value& v)
 	{
 		return "";
 	}
-	for (int i = 0; i < v.Size(); ++i)
+	for (int i = 0; i < (int)v.Size(); ++i)
 	{
 		auto& im = v[i];
 		std::string type = getStringOrThrow(im, "type");
@@ -220,7 +220,7 @@ std::string getDeveloperString(const Value& v)
 	}
 	std::string out = "";
 	bool first = true;
-	for (int i = 0; i < v.Size(); ++i)
+	for (int i = 0; i < (int)v.Size(); ++i)
 	{
 		auto mapIt = resources.gamesdb_new_developers_map.find(getIntOrThrow(v[i]));
 		if (mapIt == resources.gamesdb_new_developers_map.cend())
@@ -245,7 +245,7 @@ std::string getPublisherString(const Value& v)
 	}
 	std::string out = "";
 	bool first = true;
-	for (int i = 0; i < v.Size(); ++i)
+	for (int i = 0; i < (int)v.Size(); ++i)
 	{
 		auto mapIt = resources.gamesdb_new_publishers_map.find(getIntOrThrow(v[i]));
 		if (mapIt == resources.gamesdb_new_publishers_map.cend())
@@ -270,7 +270,7 @@ std::string getGenreString(const Value& v)
 	}
 	std::string out = "";
 	bool first = true;
-	for (int i = 0; i < v.Size(); ++i)
+	for (int i = 0; i < (int)v.Size(); ++i)
 	{
 		auto mapIt = resources.gamesdb_new_genres_map.find(getIntOrThrow(v[i]));
 		if (mapIt == resources.gamesdb_new_genres_map.cend())
@@ -322,12 +322,16 @@ void processGame(const Value& game, const Value& boxart, std::vector<ScraperSear
 		result.mdl.set("players", std::to_string(game["players"].GetInt()));
 	}
 
-	std::string id = std::to_string(getIntOrThrow(game, "id"));
-	if (boxart["data"].HasMember(id.c_str()))
+
+	if (boxart.HasMember("data") && boxart["data"].IsObject())
 	{
-		std::string image = getBoxartImage(boxart["data"][id.c_str()]);
-		result.thumbnailUrl = baseImageUrlThumb + "/" + image;
-		result.imageUrl = baseImageUrlLarge + "/" + image;
+		std::string id = std::to_string(getIntOrThrow(game, "id"));
+		if (boxart["data"].HasMember(id.c_str()))
+		{
+		    std::string image = getBoxartImage(boxart["data"][id.c_str()]);
+		    result.thumbnailUrl = baseImageUrlThumb + "/" + image;
+		    result.imageUrl = baseImageUrlLarge + "/" + image;
+		}
 	}
 
 	results.push_back(result);
@@ -377,7 +381,7 @@ void TheGamesDBJSONRequest::process(const std::unique_ptr<HttpReq>& req, std::ve
 	resources.ensureResources();
 
 
-	for (int i = 0; i < games.Size(); ++i)
+	for (int i = 0; i < (int)games.Size(); ++i)
 	{
 		auto& v = games[i];
 		try

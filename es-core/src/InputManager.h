@@ -27,7 +27,6 @@ private:
 	InputConfig* mCECInputConfig;
 
 	std::map<SDL_JoystickID, int*> mPrevAxisValues;
-	std::map<SDL_JoystickID, int*> mInitAxisValues;
 
 	bool initialized() const;
 
@@ -49,6 +48,7 @@ public:
 	void deinit();
 
 	int getNumJoysticks();
+	int getAxisCountByDevice(int deviceId);
 	int getButtonCountByDevice(int deviceId);
 	int getNumConfiguredDevices();
 

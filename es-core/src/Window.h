@@ -32,6 +32,7 @@ public:
 		virtual bool isScreenSaverActive() = 0;
 		virtual FileData* getCurrentGame() = 0;
 		virtual void launchGame() = 0;
+		virtual void resetCounts() = 0;
 	};
 
 	class InfoPopup {
@@ -73,7 +74,7 @@ public:
 	inline void stopInfoPopup() { if (mInfoPopup) mInfoPopup->stop(); };
 
 	void startScreenSaver();
-	void cancelScreenSaver();
+	bool cancelScreenSaver();
 	void renderScreenSaver();
 
 private:
@@ -82,7 +83,7 @@ private:
 
 	// Returns true if at least one component on the stack is processing
 	bool isProcessing();
-	
+
 	HelpComponent* mHelp;
 	ImageComponent* mBackgroundOverlay;
 	ScreenSaver*	mScreenSaver;
