@@ -328,8 +328,8 @@ std::vector<TextComponent*> DetailedGameListView::getMDLabels()
 	ret.push_back(&mLblGenre);
 	ret.push_back(&mLblPlayers);
 	ret.push_back(&mLblLastPlayed);
-	ret.push_back(&mLblFilename);	//this must be on this line... for some reason.
 	ret.push_back(&mLblPlayCount);
+	ret.push_back(&mLblFilename);	//this must be on this line... for some reason.
 	return ret;
 }
 
@@ -343,7 +343,7 @@ std::vector<GuiComponent*> DetailedGameListView::getMDValues()
 	ret.push_back(&mGenre);
 	ret.push_back(&mPlayers);
 	ret.push_back(&mLastPlayed);
-	ret.push_back(&mFilename);	//this must be on this line... for some reason.
 	ret.push_back(&mPlayCount);
+	ret.push_back(&mFilename);	//this must be on this line... for some reason.
 	return ret;
 }
