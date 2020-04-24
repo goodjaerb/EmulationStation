@@ -24,7 +24,12 @@ private:
 	void initMDLabels();
 	void initMDValues();
 
-	ImageComponent mImage, mBgImage, mScreenshot, mScreenshot2;
+	ImageComponent mThumbnail;
+	ImageComponent mMarquee;
+	ImageComponent mImage;
+	ImageComponent mBgImage;
+	ImageComponent mScreenshot;
+	ImageComponent mScreenshot2;
 
 	TextComponent mLblRating, mLblReleaseDate, mLblDeveloper, mLblPublisher, mLblGenre, mLblPlayers, mLblFilename, mLblLastPlayed, mLblPlayCount;
 
