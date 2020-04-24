@@ -91,9 +91,6 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mLblPlayers.setText("Players: ");
 	addChild(&mLblPlayers);
 	addChild(&mPlayers);
-	mLblFilename.setText("Filename: ");
-	addChild(&mLblFilename);
-	addChild(&mFilename);
 	mLblLastPlayed.setText("Last played: ");
 	addChild(&mLblLastPlayed);
 	mLastPlayed.setDisplayRelative(true);
@@ -101,6 +98,9 @@ DetailedGameListView::DetailedGameListView(Window* window, FileData* root) :
 	mLblPlayCount.setText("Times played: ");
 	addChild(&mLblPlayCount);
 	addChild(&mPlayCount);
+	mLblFilename.setText("Filename: ");
+	addChild(&mLblFilename);
+	addChild(&mFilename);
 
 	mName.setPosition(mSize.x(), mSize.y());
 	mName.setDefaultZIndex(40);
@@ -134,17 +134,17 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	mMarquee.applyTheme(theme, getName(), "md_marquee", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION | VISIBLE);
 	mImage.applyTheme(theme, getName(), "md_image", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION | VISIBLE);
 	mName.applyTheme(theme, getName(), "md_name", ALL);
-	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
-	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
-	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION);
+	mScreenshot.applyTheme(theme, getName(), "md_screenshot", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION | VISIBLE);
+	mScreenshot2.applyTheme(theme, getName(), "md_screenshot2", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION | VISIBLE);
+	mBgImage.applyTheme(theme, getName(), "md_bgImage", POSITION | ThemeFlags::SIZE | Z_INDEX | ROTATION | VISIBLE);
 
 	initMDLabels();
 	std::vector<TextComponent*> labels = getMDLabels();
 	assert(labels.size() == 9);
 	const char* lblElements[9] = {
-		"md_lbl_filename",
 		"md_lbl_rating", "md_lbl_releasedate", "md_lbl_developer", "md_lbl_publisher", 
 		"md_lbl_genre", "md_lbl_players", "md_lbl_lastplayed", "md_lbl_playcount"
+		, "md_lbl_filename"
 	};
 
 	for(unsigned int i = 0; i < labels.size(); i++)
@@ -157,9 +157,9 @@ void DetailedGameListView::onThemeChanged(const std::shared_ptr<ThemeData>& them
 	std::vector<GuiComponent*> values = getMDValues();
 	assert(values.size() == 9);
 	const char* valElements[9] = {
-		"md_filename",
 		"md_rating", "md_releasedate", "md_developer", "md_publisher", 
 		"md_genre", "md_players", "md_lastplayed", "md_playcount"
+		, "md_filename"
 	};
 
 	for(unsigned int i = 0; i < values.size(); i++)
@@ -327,8 +327,8 @@ std::vector<TextComponent*> DetailedGameListView::getMDLabels()
 	ret.push_back(&mLblPublisher);
 	ret.push_back(&mLblGenre);
 	ret.push_back(&mLblPlayers);
-	ret.push_back(&mLblFilename);
 	ret.push_back(&mLblLastPlayed);
+	ret.push_back(&mLblFilename);	//this must be on this line... for some reason.
 	ret.push_back(&mLblPlayCount);
 	return ret;
 }
@@ -342,8 +342,8 @@ std::vector<GuiComponent*> DetailedGameListView::getMDValues()
 	ret.push_back(&mPublisher);
 	ret.push_back(&mGenre);
 	ret.push_back(&mPlayers);
-	ret.push_back(&mFilename);
 	ret.push_back(&mLastPlayed);
+	ret.push_back(&mFilename);	//this must be on this line... for some reason.
 	ret.push_back(&mPlayCount);
 	return ret;
 }
